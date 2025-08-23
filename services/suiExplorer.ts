@@ -297,71 +297,83 @@ export interface TokenBalance {
 const tokenPriceCache: Record<string, { priceUSD: number; timestamp: number }> = {};
 const PRICE_CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
-// Helper function to get token price in USD from CoinGecko API
-async function getTokenPrice(symbol: string): Promise<number> {
+// Default prices to use when API is rate limited or no cache is available
+const DEFAULT_PRICES: Record<string, number> = {
+  SUI: 3.64,   // Example default price
+  USDC: 1.0,  // USDC is pegged to $1
+  DEEP: 0.1657   // Example default price
+};
+
+// Track rate limit status
+let rateLimitResetTime = 0;
+
+// Helper function to get cached price if valid
+function getCachedPrice(token: string): number | null {
+  const cached = tokenPriceCache[token];
+  if (cached && (Date.now() - cached.timestamp < PRICE_CACHE_DURATION_MS)) {
+    return cached.priceUSD;
+  }
+  return null;
+}
+
+async function getTokenPrice(token: string): Promise<number> {
   const now = Date.now();
-  const cacheKey = symbol.toUpperCase();
   
-  // Return cached price if still valid
-  if (tokenPriceCache[cacheKey] && (now - tokenPriceCache[cacheKey].timestamp < PRICE_CACHE_DURATION_MS)) {
-    return tokenPriceCache[cacheKey].priceUSD;
+  // First, check if we have a valid cached price
+  const cachedPrice = getCachedPrice(token);
+  if (cachedPrice !== null) {
+    return cachedPrice;
+  }
+  
+  // If we have a cached price but it's expired, use it while we fetch a new one
+  const expiredCache = tokenPriceCache[token]?.priceUSD;
+  
+  // If we're rate limited and have no valid cache, use default price
+  if (now < rateLimitResetTime) {
+    console.warn(`Rate limited, using ${expiredCache !== undefined ? 'expired cached' : 'default'} price for ${token}`);
+    return expiredCache !== undefined ? expiredCache : (DEFAULT_PRICES[token] || 0);
   }
 
   try {
-    console.log(`[getTokenPrice] Fetching price for ${symbol}`);
+    const response = await fetch(`/api/token-price?token=${token}`);
     
-    // Map of common symbols to CoinGecko token IDs
-    const coinGeckoIds: Record<string, string> = {
-      'SUI': 'sui',
-      'USDC': 'usd-coin',
-      'USDT': 'tether',
-      'DAI': 'dai',
-      'ETH': 'ethereum',
-      'BTC': 'bitcoin'
-    };
-
-    const coinId = coinGeckoIds[cacheKey];
-    if (!coinId) {
-      console.warn(`[getTokenPrice] No CoinGecko ID found for token: ${symbol}`);
-      return 0;
+    // Handle rate limiting (status 429)
+    if (response.status === 429) {
+      // Try to get Retry-After header, default to 60 seconds if not available
+      const retryAfter = parseInt(response.headers.get('Retry-After') || '60', 10) * 1000;
+      rateLimitResetTime = now + retryAfter;
+      console.warn(`Rate limited, will retry after ${retryAfter/1000} seconds`);
+      return expiredCache !== undefined ? expiredCache : (DEFAULT_PRICES[token] || 0);
     }
-
-    // Fetch price from CoinGecko API
-    const response = await fetch(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd&include_24hr_change=true`
-    );
     
     if (!response.ok) {
-      throw new Error(`CoinGecko API error: ${response.statusText}`);
+      console.error(`Failed to fetch ${token} price: ${response.statusText}`);
+      return expiredCache !== undefined ? expiredCache : (DEFAULT_PRICES[token] || 0);
     }
-
+    
     const data = await response.json();
-    const price = data[coinId]?.usd;
+    const price = data.price;
     
-    if (price === undefined) {
-      console.warn(`[getTokenPrice] No price data for ${symbol} in CoinGecko response`);
-      return 0;
+    // Update cache with new price
+    if (price) {
+      tokenPriceCache[token] = {
+        priceUSD: price,
+        timestamp: now
+      };
+      return price;
     }
     
-    console.log(`[getTokenPrice] Fetched price for ${symbol}: $${price} USD`);
+    // If no valid price in response, return expired cache or default
+    return expiredCache !== undefined ? expiredCache : (DEFAULT_PRICES[token] || 0);
     
-    // Update cache
-    tokenPriceCache[cacheKey] = {
-      priceUSD: price,
-      timestamp: now
-    };
-    
-    return price;
   } catch (error) {
-    console.error(`Error fetching price for ${symbol}:`, error);
-    // Return cached price if available, otherwise 0
-    return tokenPriceCache[cacheKey]?.priceUSD ?? 0;
+    console.error(`Error fetching ${token} price:`, error);
+    return expiredCache !== undefined ? expiredCache : (DEFAULT_PRICES[token] || 0);
   }
 }
 
 export async function fetchWalletBalances(address: string): Promise<TokenBalance[]> {
   try {
-    console.log('[fetchWalletBalances] Fetching balances for address:', address);
     
     // First, get all coins owned by the address
     const response = await fetch('https://fullnode.mainnet.sui.io:443', {
@@ -376,15 +388,12 @@ export async function fetchWalletBalances(address: string): Promise<TokenBalance
     });
 
     const data = await response.json();
-    console.log('[fetchWalletBalances] Raw API response:', JSON.stringify(data, null, 2));
     
     if (!data.result) {
       console.error('[fetchWalletBalances] Error in API response:', data.error);
       return [];
     }
     
-    console.log(`[fetchWalletBalances] Found ${data.result.length} token balances`);
-
     // Process each coin type
     const balances = await Promise.all(
       data.result.map(async (balance: any, index: number) => {
@@ -392,18 +401,11 @@ export async function fetchWalletBalances(address: string): Promise<TokenBalance
         let symbol = 'UNKNOWN';
         let decimals = 0;
         
-        console.log(`[fetchWalletBalances] Processing balance ${index + 1}:`, {
-          coinType,
-          totalBalance: balance.totalBalance,
-          lockedBalance: balance.lockedBalance
-        });
-        
         // Handle SUI token (more flexible matching for different SUI coin types)
         if (coinType.endsWith('::sui::SUI') || coinType.endsWith('::sui::sui::SUI') || 
             coinType.endsWith('0x2::sui::SUI') || coinType.endsWith('0x2::sui::sui::SUI')) {
           symbol = 'SUI';
           decimals = 9;
-          console.log(`[fetchWalletBalances] Identified as SUI token`);
         } 
         // Handle USDC token (more flexible matching for different USDC implementations)
         else if (coinType.endsWith('::usdc::USDC') || 
@@ -412,7 +414,12 @@ export async function fetchWalletBalances(address: string): Promise<TokenBalance
                 coinType.includes('0x5d4b302506645c37ff133b98c4b50a5ae14841659738d86823d861affcf25683::usdc::USDC')) {
           symbol = 'USDC';
           decimals = 6;
-          console.log(`[fetchWalletBalances] Identified as USDC token`);
+        }
+        // Handle DEEP token
+        else if (coinType.endsWith('::deep::DEEP') || 
+                coinType.includes('0xdeeb7a4662eec9f2f3def03fb937a663dddaa2e215b8078a284d026b7946c270::deep::DEEP')) {
+          symbol = 'DEEP';
+          decimals = 6;
         } else {
           console.log(`[fetchWalletBalances] Unknown token type: ${coinType}`);
         }
@@ -425,18 +432,9 @@ export async function fetchWalletBalances(address: string): Promise<TokenBalance
         const balanceValue = BigInt(balance.totalBalance || '0');
         const numericBalance = Number(balanceValue) / (10 ** decimals);
         
-        console.log(`[fetchWalletBalances] Processing ${symbol} balance:`, {
-          rawBalance: balance.totalBalance,
-          balanceValue: balanceValue.toString(),
-          numericBalance,
-          decimals
-        });
-        
         try {
           // Get token price in USD
-          console.log(`[fetchWalletBalances] Getting price for ${symbol}`);
           const priceUSD = await getTokenPrice(symbol);
-          console.log(`[fetchWalletBalances] Got price for ${symbol}:`, priceUSD);
           
           // Handle zero balance case
           if (numericBalance === 0) {
@@ -461,9 +459,7 @@ export async function fetchWalletBalances(address: string): Promise<TokenBalance
           // Convert USD value to GBP
           let valueGBP = 0;
           try {
-            console.log(`[fetchWalletBalances] Converting ${valueUSD} USD to GBP`);
             valueGBP = await convertToGBP(valueUSD);
-            console.log(`[fetchWalletBalances] Converted to GBP:`, valueGBP);
           } catch (error) {
             console.error('Error converting to GBP, using 1:1 rate:', error);
             valueGBP = valueUSD; // Fallback to USD value if conversion fails

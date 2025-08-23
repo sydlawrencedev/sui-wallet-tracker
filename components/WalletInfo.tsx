@@ -56,7 +56,7 @@ export function WalletInfo({ address }: WalletInfoProps) {
     return () => clearInterval(interval);
   }, [loadWalletData]);
 
-  const handleSwap = async (amount: string) => {
+  const handleSwap = async (amount: string, token: string) => {
     setIsSwapping(true);
     setTxDigest(null);
     setError(null);
@@ -67,7 +67,7 @@ export function WalletInfo({ address }: WalletInfoProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ address, amount }),
+        body: JSON.stringify({ address, amount, token }),
       });
 
       const result = await response.json();
@@ -78,7 +78,8 @@ export function WalletInfo({ address }: WalletInfoProps) {
 
       setTxDigest(result.digest);
       console.log('Swap successful, digest:', result.digest);
-      setTimeout(loadWalletData, 3000); // Refresh balance after a delay
+      // Refresh wallet balances immediately
+      await loadWalletData();
     } catch (err) {
       console.error('Swap failed:', err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
@@ -119,17 +120,26 @@ export function WalletInfo({ address }: WalletInfoProps) {
             </div>
             <div className="text-right">
               <div className="font-medium">{formatCurrency(token.valueGBP, 'GBP')}</div>
-              {token.symbol === 'USDC' && parseFloat(formatBalance(token.balance, token.decimals)) > 0 && (
-                <div className="mt-1">
+              <div className="mt-1 space-y-1">
+                {token.symbol === 'USDC' && parseFloat(formatBalance(token.balance, token.decimals)) > 10 && (
                   <button
-                    onClick={() => handleSwap(token.balance)}
+                    onClick={() => handleSwap(token.balance, "USDC")}
                     disabled={isSwapping}
-                    className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400"
+                    className="w-full px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400"
                   >
                     {isSwapping ? 'Swapping...' : 'Swap All to SUI'}
                   </button>
-                </div>
-              )}
+                )}
+                {token.symbol === 'SUI' && parseFloat(formatBalance(token.balance, token.decimals)) > 15 && (
+                  <button
+                    onClick={() => handleSwap(token.balance, "SUI")}
+                    disabled={isSwapping}
+                    className="w-full px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 disabled:bg-gray-400"
+                  >
+                    {isSwapping ? 'Swapping...' : 'Swap All to USDC'}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ))}
