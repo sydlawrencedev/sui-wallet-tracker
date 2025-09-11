@@ -31,6 +31,7 @@ export default function Home() {
           gridTemplateColumns: '1fr',
           gap: '2rem',
         }}>
+          <img src="/backtests/strategy_chart-SUI-USD-h3ka.png" alt="Strategy Chart" width="100%"/>
           <div>
             <WalletInfo address={DEFAULT_SUI_ADDRESS} />
           </div>
