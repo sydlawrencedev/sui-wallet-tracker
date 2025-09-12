@@ -144,8 +144,8 @@ export function TransactionList({ address }: TransactionListProps) {
       
       // Process the raw transaction data into a more usable format
       const processedTransactions = processTransactionData(rawTransactions, address);
-      console.log('Processed transactions:', processedTransactions);
-      
+      console.log(`Processed ${processedTransactions.length} transactions`);
+
       // Ensure all transactions have the required fields with proper types
       const typedTransactions: Transaction[] = processedTransactions.map(tx => ({
         id: tx.id || '',
@@ -163,7 +163,7 @@ export function TransactionList({ address }: TransactionListProps) {
       
       // Calculate total profit/loss (this is simplified - in a real app, you'd need to track cost basis)
       const totalPL = typedTransactions.reduce((sum, tx) => sum + (tx.profitLoss || 0), 0);
-      
+      console.log("typed transactions", typedTransactions);
       setTransactions(typedTransactions);
       setTotalProfitLoss(totalPL);
     } catch (err) {

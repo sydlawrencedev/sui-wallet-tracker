@@ -145,9 +145,7 @@ export async function fetchWalletTransactions(
     ]
   };
   
-  console.log('Query:', JSON.stringify(query, null, 2));
   try {
-    console.log('Sending request to Sui RPC with query:', JSON.stringify(query, null, 2));
     const response = await fetch('https://fullnode.mainnet.sui.io:443', {
       method: 'POST',
       headers: {
@@ -161,7 +159,6 @@ export async function fetchWalletTransactions(
     }
 
     const responseData = await response.json();
-    console.log('Raw API response:', JSON.stringify(responseData, null, 2));
     
     if (responseData.error) {
       console.error('API Error:', responseData.error);
@@ -299,9 +296,9 @@ const PRICE_CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
 // Default prices to use when API is rate limited or no cache is available
 const DEFAULT_PRICES: Record<string, number> = {
-  SUI: 3.64,   // Example default price
+  SUI: 3.6203,   // Example default price
   USDC: 1.0,  // USDC is pegged to $1
-  DEEP: 0.1657   // Example default price
+  DEEP: 0.1365   // Example default price
 };
 
 // Track rate limit status
@@ -591,7 +588,9 @@ export function processTransactionData(transactions: SuiTransaction[], walletAdd
           raw: event
         };
       }
-      
+
+      console.log('Unknown event type:', event.type);
+
       // Skip unknown event types
       return [];
     }

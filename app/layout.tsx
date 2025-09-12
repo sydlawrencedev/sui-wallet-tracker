@@ -3,7 +3,7 @@ import './globals.css';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: 'SUI Wallet Tracker',
+  title: 'SUI Auto Trader 2000',
   description: 'Track SUI wallet transactions with GBP values and profit/loss',
 };
 
