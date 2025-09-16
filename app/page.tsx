@@ -31,10 +31,11 @@ export default function Home() {
         {/* Header with gradient text */}
         <header className="mb-12 text-center">
           <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-cyan-400 mb-4">
-            SUI Auto Trader 2000
+            AT2000i
           </h1>
           <p className="text-gray-400 max-w-2xl mx-auto">
-            Track your SUI wallet transactions with real-time GBP conversions and profit/loss analysis
+          AT1000i, the Auto Trader 1000 Intelligence, by Minith Labs, is a cutting-edge AI / ML algorithmic trading bot that uses advanced machine learning techniques to identify profitable trading opportunities in the SUI/USDC market. AT1000i will uses the 5 minute OHLC candles to generate signals.
+
           </p>
         </header>
 

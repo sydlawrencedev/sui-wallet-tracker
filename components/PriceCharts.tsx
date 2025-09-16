@@ -11,6 +11,8 @@ import {
   Tooltip,
   Legend,
   Filler,
+  type ChartOptions,
+  type InteractionMode,
 } from 'chart.js';
 import { useEffect, useState } from 'react';
 
@@ -38,11 +40,11 @@ const formatDate = (dateString: string) => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-const chartOptions = {
+const chartOptions: ChartOptions<'line'> = {
   responsive: true,
   maintainAspectRatio: false,
   interaction: {
-    mode: 'index',
+    mode: 'index' as InteractionMode,
     intersect: false,
   },
   plugins: {
@@ -78,11 +80,6 @@ const chartOptions = {
               label += new Intl.NumberFormat('en-GB', { 
                 style: 'currency', 
                 currency: 'GBP' 
-              }).format(context.parsed.y);
-            } else {
-              label += new Intl.NumberFormat('en-US', { 
-                style: 'currency', 
-                currency: 'USD' 
               }).format(context.parsed.y);
             }
           }
@@ -172,18 +169,7 @@ const PriceCharts = () => {
         fill: false,
         pointRadius: 0,
         yAxisID: 'y1',
-      },
-      {
-        label: 'USDC',
-        data: [] as number[],
-        borderColor: '#3B82F6',
-        backgroundColor: '#3B82F620',
-        borderWidth: 1,
-        borderDash: [5, 5],
-        tension: 0,
-        pointRadius: 0,
-        yAxisID: 'y',
-      },
+      }
     ],
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -224,11 +210,7 @@ const PriceCharts = () => {
             {
               ...chartData.datasets[1],
               data: sortedData.map(item => 1 / item.GBP), // Convert to GBP/USD
-            },
-            {
-              ...chartData.datasets[2],
-              data: sortedData.map(() => 1), // USDC is always 1:1 with USD
-            },
+            }
           ],
         });
         
@@ -283,9 +265,9 @@ const PriceCharts = () => {
           ))}
         </div>
       </div>
-      <div className="h-96 relative">
+      <div className="h-196 relative">
         <div className="absolute inset-0">
-          <Line data={chartData} options={chartOptions} />
+          <Line height="300" data={chartData} options={chartOptions} />
         </div>
       </div>
     </div>

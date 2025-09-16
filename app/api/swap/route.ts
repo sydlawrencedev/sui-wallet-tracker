@@ -7,7 +7,7 @@ import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { NextResponse } from "next/server";
 
 const SLIPPAGE = 0.01;
-const MINIMUM_SUI_LEFT_IN_WALLET = 10
+const MINIMUM_SUI_LEFT_IN_WALLET = 2
 
 // Initialize wallet from private key
 const SUI_PRIVATE_KEY = process.env.SUI_PRIVATE_KEY;
@@ -35,7 +35,7 @@ const client = new SuiClient({
 
 // Initialize DeepBook client with proper configuration
 const deepbookClient = new DeepBookClient({
-    client: client,
+    client: client as any,
     address: REGISTRY_ID,
     env: SUI_ENV
 });
@@ -131,7 +131,7 @@ async function transactSwap(
     baseOut: any,
     quoteOut: any,
     deepOut: any
-): Promise<boolean> {
+): Promise<boolean | any> {
     try {
         tx.transferObjects([baseOut, quoteOut, deepOut], keypair.getPublicKey().toSuiAddress());
 
@@ -189,7 +189,7 @@ async function swapUSDCForSUI(
             amount: amount, // amount of SUI to swap
             deepAmount: 1, // amount of DEEP to pay as fees, excess is returned
             minOut: minOut, // minimum amount of USDC to receive or transaction fails
-        })(tx);
+        })(tx as any);
 
         var success = await transactSwap(tx, baseOut, quoteOut, deepOut);
         return success;
@@ -213,7 +213,7 @@ async function swapSUIForUSDC(
             amount: amount, // amount of SUI to swap
             deepAmount: 1, // amount of DEEP to pay as fees, excess is returned
             minOut: minOut, // minimum amount of USDC to receive or transaction fails
-        })(tx);
+        })(tx as any);
 
         var success = await transactSwap(tx, baseOut, quoteOut, deepOut);
        return success;
@@ -247,7 +247,7 @@ export async function POST(request: Request, { params }: { params: { token: stri
       }
       
       // const swap_result = await swapSUIForUSDC(1, 0.1);
-      const result = await swapUSDCForSUI(Number(amountIn), 0.1);
+      const result = await swapUSDCForSUI(Number(amountIn), 0.1) as any;
 
       return NextResponse.json({ 
         success: true,
@@ -272,7 +272,7 @@ export async function POST(request: Request, { params }: { params: { token: stri
       }
       
       // const swap_result = await swapSUIForUSDC(1, 0.1);
-      const result = await swapSUIForUSDC(Number(amountIn), 0.1);
+      const result = await swapSUIForUSDC(Number(amountIn), 0.1) as any;
 
       return NextResponse.json({ 
         success: true,

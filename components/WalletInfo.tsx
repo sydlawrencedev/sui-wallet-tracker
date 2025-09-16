@@ -107,7 +107,7 @@ export function WalletInfo({ address }: WalletInfoProps) {
       
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Portfolio Value</h2>
-        <p className="text-2xl font-semibold text-gray-900">{formatCurrency(totalGBPValue, 'GBP')}</p>
+        <p className="text-2xl font-semibold text-gray-900">{formatCurrency(totalValue, 'USD')}</p>
       </div>
 
       <div className="space-y-4">
@@ -119,7 +119,7 @@ export function WalletInfo({ address }: WalletInfoProps) {
               <div className="text-sm text-gray-500">{formatBalance(token.balance, token.decimals)}</div>
             </div>
             <div className="text-right">
-              <div className="font-medium">{formatCurrency(token.valueGBP, 'GBP')}</div>
+              <div className="font-medium">{formatCurrency(token.valueUSD, 'USD')}</div>
               <div className="mt-1 space-y-1">
                 {token.symbol === 'USDC' && parseFloat(formatBalance(token.balance, token.decimals)) > 10 && (
                   <button

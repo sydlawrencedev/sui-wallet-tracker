@@ -74,7 +74,7 @@ function getAllCachedPrices(): PriceData[] {
 }
 
 export { 
-  PriceData,
+  type PriceData,
   getCachedPrice,
   updateCache,
   getAllCachedPrices
