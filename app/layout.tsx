@@ -3,7 +3,7 @@ import './globals.css';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: 'SUI Auto Trader 2000',
+  title: 'SUI AT1000i',
   description: 'Track SUI wallet transactions with GBP values and profit/loss',
 };
 
@@ -16,7 +16,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <Providers>
-          <div style={{ minHeight: '100vh' }}>
+          <div className="min-h-screen">
             {children}
           </div>
         </Providers>

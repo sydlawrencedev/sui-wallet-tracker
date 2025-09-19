@@ -9,6 +9,10 @@ interface PriceData {
   USDC: number;   // USDC price (1 USDC = 1 USD)
   SUI: number;    // SUI price in USD
   GBP: number;    // GBP price (1 USD = X GBP)
+  DEEP?: number;  // DEEP token price in USD
+  FUNDS: number;  // Available funds in USD
+  TOKENS_AVAILABLE: number;  // Number of tokens available
+  timestamp?: number; // Unix timestamp in milliseconds
 }
 
 // Ensure cache directory exists
@@ -53,6 +57,30 @@ async function updateCache(newData: PriceData) {
   const cache = readCache();
   const existingIndex = cache.findIndex(item => item.date === newData.date);
   
+  // Add or update timestamp
+  newData.timestamp = Date.now();
+  
+  try {
+    // Get the latest wallet data to update FUNDS
+    const { getServerSideWalletData } = await import('./walletData');
+    const walletAddress = process.env.NEXT_PUBLIC_DEFAULT_SUI_ADDRESS;
+    
+    if (walletAddress) {
+      const { totalValue } = await getServerSideWalletData(walletAddress);
+      newData.FUNDS = totalValue;
+    } else {
+      console.warn('NEXT_PUBLIC_DEFAULT_SUI_ADDRESS is not set in environment variables');
+    }
+  } catch (error) {
+    console.error('Error updating wallet funds in cache:', error);
+    // If there's an error, keep the existing FUNDS value or default to 0
+    if (existingIndex >= 0) {
+      newData.FUNDS = cache[existingIndex]?.FUNDS || 0;
+    } else {
+      newData.FUNDS = 0;
+    }
+  }
+  
   if (existingIndex >= 0) {
     // Update existing entry
     cache[existingIndex] = newData;
@@ -73,9 +101,27 @@ function getAllCachedPrices(): PriceData[] {
   return readCache();
 }
 
+// Create a function to generate default price data
+function getDefaultPriceData(overrides: Partial<PriceData> = {}): PriceData {
+  const now = new Date();
+  const defaultData: PriceData = {
+    date: now.toISOString().split('T')[0], // YYYY-MM-DD format
+    USDC: 1,            // 1 USDC = 1 USD
+    SUI: 0,             // Will be updated with real data
+    GBP: 0.78,          // Example GBP rate (1 USD = 0.78 GBP)
+    FUNDS: 0,           // Will be updated with real data
+    TOKENS_AVAILABLE: 998942, // Will be updated with real data
+    timestamp: Date.now(), // Current timestamp
+    ...overrides         // Allow overriding any default values
+  };
+
+  return defaultData;
+}
+
 export { 
   type PriceData,
   getCachedPrice,
   updateCache,
-  getAllCachedPrices
+  getAllCachedPrices,
+  getDefaultPriceData
 };

@@ -33,6 +33,9 @@ interface PriceData {
   USDC: number;
   SUI: number;
   GBP: number;
+  FUNDS: number;
+  TOKENS_AVAILABLE: number;
+  DEEP?: number;
 }
 
 const formatDate = (dateString: string) => {
@@ -145,6 +148,7 @@ const chartOptions: ChartOptions<'line'> = {
 
 const PriceCharts = () => {
   const [activeTab, setActiveTab] = useState('1d');
+  const [activeChart, setActiveChart] = useState('price'); // 'price', 'funds', 'tokenPrice'
   const [chartData, setChartData] = useState({
     labels: [] as string[],
     datasets: [
@@ -210,6 +214,17 @@ const PriceCharts = () => {
             {
               ...chartData.datasets[1],
               data: sortedData.map(item => 1 / item.GBP), // Convert to GBP/USD
+            },
+            {
+              ...chartData.datasets[2],
+              data: sortedData.map(item => item.FUNDS || 0),
+            },
+            {
+              ...chartData.datasets[3],
+              data: sortedData.map(item => {
+                const tokensOutstanding = 1000000 - (item.TOKENS_AVAILABLE || 1000000);
+                return tokensOutstanding > 0 ? (item.FUNDS || 0) / tokensOutstanding : 0;
+              }),
             }
           ],
         });
@@ -245,29 +260,97 @@ const PriceCharts = () => {
     );
   }
 
+  const chartTitles = {
+    price: 'SUI/USD Price',
+    funds: 'Fund Value (USDC)',
+    tokenPrice: 'Price per Token (USDC)'
+  };
+
   return (
-    <div className="w-full bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-6 border border-gray-800 shadow-lg mb-8">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium text-gray-200">SUI/USD Price</h3>
-        <div className="flex space-x-2">
-          {['1d', '1w', '1m', '3m', '1y'].map((period) => (
-            <button
-              key={period}
-              onClick={() => setActiveTab(period)}
-              className={`px-3 py-1 text-sm rounded-md ${
-                activeTab === period
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
-              }`}
-            >
-              {period.toUpperCase()}
-            </button>
-          ))}
-        </div>
+    <div className="space-y-8">
+      <div className="flex space-x-2 mb-6">
+        {Object.entries(chartTitles).map(([key, title]) => (
+          <button
+            key={key}
+            onClick={() => setActiveChart(key)}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              activeChart === key
+                ? 'bg-indigo-600 text-white'
+                : 'text-gray-400 hover:text-gray-200 bg-gray-800/50 hover:bg-gray-700/50'
+            }`}
+          >
+            {title}
+          </button>
+        ))}
       </div>
-      <div className="h-196 relative">
-        <div className="absolute inset-0">
-          <Line height="300" data={chartData} options={chartOptions} />
+      
+      <div className="w-full bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-6 border border-gray-800 shadow-lg">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-medium text-gray-200">
+            {chartTitles[activeChart as keyof typeof chartTitles]}
+          </h3>
+          <div className="flex space-x-2">
+            {['1d', '1w', '1m', '3m', '1y'].map((period) => (
+              <button
+                key={period}
+                onClick={() => setActiveTab(period)}
+                className={`px-3 py-1 text-sm rounded-md ${
+                  activeTab === period
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+                }`}
+              >
+                {period.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="h-96 relative">
+          <div className="absolute inset-0">
+            <Line 
+              height={384}
+              data={{
+                labels: chartData.labels,
+                datasets: chartData.datasets.filter(ds => 
+                  (activeChart === 'price' && (ds.label === 'SUI/USD' || ds.label === 'GBP/USD')) ||
+                  (activeChart === 'funds' && ds.label === 'Fund Value') ||
+                  (activeChart === 'tokenPrice' && ds.label === 'Price per Token')
+                )
+              }} 
+              options={{
+                ...chartOptions,
+                scales: {
+                  ...chartOptions.scales,
+                  y: {
+                    ...chartOptions.scales?.y,
+                    ticks: {
+                      ...chartOptions.scales?.y?.ticks,
+                      callback: (value: string | number) => 
+                        activeChart === 'price' 
+                          ? new Intl.NumberFormat('en-US', { 
+                              style: 'currency', 
+                              currency: 'USD',
+                              maximumFractionDigits: 4 
+                            }).format(Number(value))
+                          : activeChart === 'funds'
+                            ? new Intl.NumberFormat('en-US', {
+                                style: 'currency',
+                                currency: 'USD',
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                              }).format(Number(value))
+                            : new Intl.NumberFormat('en-US', {
+                                style: 'currency',
+                                currency: 'USD',
+                                minimumFractionDigits: 4,
+                                maximumFractionDigits: 6
+                              }).format(Number(value))
+                    }
+                  }
+                }
+              }} 
+            />
+          </div>
         </div>
       </div>
     </div>

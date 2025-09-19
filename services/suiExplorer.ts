@@ -292,7 +292,7 @@ export interface TokenBalance {
 
 // Cache for token prices to avoid redundant API calls
 const tokenPriceCache: Record<string, { priceUSD: number; timestamp: number }> = {};
-const PRICE_CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+const PRICE_CACHE_DURATION_MS = 1 * 60 * 1000; // 5 minutes
 
 // Default prices to use when API is rate limited or no cache is available
 const DEFAULT_PRICES: Record<string, number> = {
@@ -313,26 +313,49 @@ function getCachedPrice(token: string): number | null {
   return null;
 }
 
+// Normalize token symbol for consistent cache lookups
+function normalizeTokenSymbol(token: string): string {
+  return token.toUpperCase();
+}
+
 async function getTokenPrice(token: string): Promise<number> {
+  const normalizedToken = normalizeTokenSymbol(token);
   const now = Date.now();
   
-  // First, check if we have a valid cached price
-  const cachedPrice = getCachedPrice(token);
-  if (cachedPrice !== null) {
-    return cachedPrice;
+  // First, try to find a cached price (case-insensitive)
+  const cachedToken = Object.keys(tokenPriceCache).find(
+    k => normalizeTokenSymbol(k) === normalizedToken
+  );
+  
+  // If we have a valid cached price, return it
+  if (cachedToken) {
+    const cachedPrice = getCachedPrice(cachedToken);
+    if (cachedPrice !== null) {
+      return cachedPrice;
+    }
   }
   
-  // If we have a cached price but it's expired, use it while we fetch a new one
-  const expiredCache = tokenPriceCache[token]?.priceUSD;
+  // If we have an expired cache, use it while we fetch a new one
+  const expiredCache = cachedToken ? tokenPriceCache[cachedToken]?.priceUSD : undefined;
   
-  // If we're rate limited and have no valid cache, use default price
+  // If we're rate limited, use expired cache or default price
   if (now < rateLimitResetTime) {
     console.warn(`Rate limited, using ${expiredCache !== undefined ? 'expired cached' : 'default'} price for ${token}`);
-    return expiredCache !== undefined ? expiredCache : (DEFAULT_PRICES[token] || 0);
+    return expiredCache !== undefined ? expiredCache : (DEFAULT_PRICES[normalizedToken] || 0);
   }
 
   try {
-    const response = await fetch(`/api/token-price?token=${token}`);
+    // Determine the base URL based on environment
+    const baseUrl = typeof window === 'undefined' 
+      ? process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+      : '';
+      
+    // Use the API endpoint with proper base URL
+    const response = await fetch(`${baseUrl}/api/token-price?token=${token}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     
     // Handle rate limiting (status 429)
     if (response.status === 429) {
@@ -345,24 +368,37 @@ async function getTokenPrice(token: string): Promise<number> {
     
     if (!response.ok) {
       console.error(`Failed to fetch ${token} price: ${response.statusText}`);
-      return expiredCache !== undefined ? expiredCache : (DEFAULT_PRICES[token] || 0);
+      // If we have an expired cache, use it
+      if (expiredCache !== undefined) {
+        console.warn(`Using expired cached price for ${token} due to error`);
+        return expiredCache;
+      }
+      
+      // Try to find a default price with case-insensitive match
+      const defaultPriceKey = Object.keys(DEFAULT_PRICES).find(
+        k => normalizeTokenSymbol(k) === normalizedToken
+      );
+      if (defaultPriceKey) {
+        console.warn(`Using default price for ${token} due to error`);
+        return DEFAULT_PRICES[defaultPriceKey];
+      }
+      return 0;
     }
     
     const data = await response.json();
     const price = data.price;
     
-    // Update cache with new price
-    if (price) {
-      tokenPriceCache[token] = {
-        priceUSD: price,
-        timestamp: now
-      };
-      return price;
-    }
+    // Update the cache with the new price using the original token case for consistency
+    const existingCacheKey = Object.keys(tokenPriceCache).find(
+      k => normalizeTokenSymbol(k) === normalizedToken
+    ) || token; // Use the provided token as key if no existing cache found
     
-    // If no valid price in response, return expired cache or default
-    return expiredCache !== undefined ? expiredCache : (DEFAULT_PRICES[token] || 0);
+    tokenPriceCache[existingCacheKey] = {
+      priceUSD: price,
+      timestamp: now,
+    };
     
+    return price;
   } catch (error) {
     console.error(`Error fetching ${token} price:`, error);
     return expiredCache !== undefined ? expiredCache : (DEFAULT_PRICES[token] || 0);
@@ -532,127 +568,70 @@ export async function fetchAllWalletTransactions(
   return allTransactions;
 }
 
+function getTokenSymbol(coinType: string): string {
+  if (!coinType) return 'TOKEN';
+  if (coinType.includes('sui::sui::SUI') || coinType.endsWith('::sui::SUI')) return 'SUI';
+  if (coinType.includes('usdc::USDC') || coinType.endsWith('::usdc::USDC')) return 'USDC';
+  if (coinType.includes('deep::DEEP') || coinType.endsWith('::deep::DEEP')) return 'DEEP';
+  if (coinType.includes('sca::SCA') || coinType.endsWith('::sca::SCA')) return 'SCA';
+  if (coinType.includes('::')) return coinType.split('::').pop() || 'TOKEN';
+  return 'TOKEN';
+}
+
 export function processTransactionData(transactions: SuiTransaction[], walletAddress: string) {
   return transactions.flatMap(tx => {
-    // Handle event-based data structure
-    if (tx.rawEvent) {
-      const event = tx.rawEvent;
-      const parsedJson = event.parsedJson || {};
+    try {
+      const transfers: any[] = [];
       
-      // Handle different event types
-      if (event.type.includes('::coin::DepositEvent')) {
-        // Received tokens
+      // Process balance changes
+      if (tx.effects?.events) {
+        tx.effects.events.forEach(event => {
+          // Handle coin balance changes
+          if (event.coinBalanceChange) {
+            const { coinType, amount, owner } = event.coinBalanceChange;
+            const isReceive = owner?.AddressOwner === walletAddress;
+            
+            transfers.push({
+              amount: amount.toString(),
+              token: getTokenSymbol(coinType),
+              from: isReceive ? undefined : walletAddress,
+              to: isReceive ? walletAddress : undefined,
+              decimals: 9 // Default, adjust based on token if needed
+            });
+          }
+        });
+      }
+      
+      // If no transfers found, try to get basic info from the transaction
+      if (transfers.length === 0) {
         return {
-          id: event.id.txDigest,
-          type: 'receive' as const,
-          status: 'success',
-          amount: parsedJson.amount ? (Number(parsedJson.amount) / 1e9).toString() : '0',
-          token: 'SUI',
-          gbpValue: 0, // Would be calculated based on historical prices
-          profitLoss: 0, // Would be calculated based on cost basis
-          timestamp: event.timestampMs ? parseInt(event.timestampMs) : Date.now(),
-          from: parsedJson.sender || '',
-          to: walletAddress,
-          raw: event
-        };
-      } else if (event.type.includes('::coin::WithdrawEvent')) {
-        // Sent tokens
-        return {
-          id: event.id.txDigest,
-          type: 'send' as const,
-          status: 'success',
-          amount: parsedJson.amount ? (Number(parsedJson.amount) / 1e9).toString() : '0',
-          token: 'SUI',
-          gbpValue: 0, // Would be calculated based on historical prices
-          profitLoss: 0, // Would be calculated based on cost basis
-          timestamp: event.timestampMs ? parseInt(event.timestampMs) : Date.now(),
-          from: walletAddress,
-          to: parsedJson.recipient || '',
-          raw: event
-        };
-      } else if (event.type.includes('::devnet_nft::usdc::USDC') || 
-                event.type.includes('::cetus::usdc::USDC')) {
-        // USDC transactions
-        const isSend = event.sender === walletAddress;
-        return {
-          id: event.id.txDigest,
-          type: isSend ? 'send' : 'receive',
-          status: 'success',
-          amount: parsedJson.amount ? (Number(parsedJson.amount) / 1e6).toString() : '0',
-          token: 'USDC',
-          gbpValue: 0, // Would be calculated based on historical prices
-          profitLoss: 0, // Would be calculated based on cost basis
-          timestamp: event.timestampMs ? parseInt(event.timestampMs) : Date.now(),
-          from: isSend ? walletAddress : (event.sender || ''),
-          to: isSend ? (parsedJson.recipient || '') : walletAddress,
-          raw: event
+          id: tx.digest,
+          type: tx.sender === walletAddress ? 'send' : 'receive',
+          status: tx.effects?.status?.status === 'success' ? 'success' : 'failure',
+          timestamp: parseInt(tx.timestampMs || '0'),
+          transfers: [],
+          usdValue: 0,
+          profitLoss: 0,
+          raw: tx
         };
       }
-
-      console.log('Unknown event type:', event.type);
-
-      // Skip unknown event types
-      return [];
+      
+      return {
+        id: tx.digest,
+        type: transfers.length > 1 ? 'batch' : transfers[0]?.to === walletAddress ? 'receive' : 'send',
+        status: tx.effects?.status?.status === 'success' ? 'success' : 'failure',
+        timestamp: parseInt(tx.timestampMs || '0'),
+        transfers,
+        usdValue: 0, // Will be populated later with price data
+        profitLoss: 0,
+        raw: tx,
+        isSwap: transfers.length >= 2 && 
+               transfers.some(t => t.amount.startsWith('-')) &&
+               transfers.some(t => !t.amount.startsWith('-'))
+      };
+    } catch (error) {
+      console.error('Error processing transaction:', tx.digest, error);
+      return null;
     }
-
-    // Fallback to original processing for non-event transactions
-    const walletBalanceChanges = tx.balanceChanges?.filter(
-      change => change.owner?.AddressOwner === walletAddress
-    ) || [];
-
-    // Find SUI and USDC balance changes
-    const suiChange = walletBalanceChanges.find(c => c.coinType.includes('sui::SUI'));
-    const usdcChange = walletBalanceChanges.find(c => 
-      c.coinType.includes('devnet_nft::usdc::USDC') || 
-      c.coinType.includes('cetus::usdc::USDC')
-    );
-
-    let amount = '0';
-    let token: 'SUI' | 'USDC' = 'SUI';
-    let type: 'send' | 'receive' = 'receive';
-    let otherParty = '';
-
-    if (suiChange) {
-      const amountValue = BigInt(suiChange.amount);
-      if (amountValue > 0) {
-        amount = (Number(amountValue) / 1e9).toString();
-        type = 'receive';
-        otherParty = tx.transaction?.data?.sender || '';
-      } else if (amountValue < 0) {
-        amount = (Math.abs(Number(amountValue)) / 1e9).toString();
-        type = 'send';
-        otherParty = tx.transaction?.data?.transaction?.data?.transactions?.find(
-          (t: any) => t.TransferSui || t.TransferObject
-        )?.recipient || '';
-      }
-    } else if (usdcChange) {
-      const amountValue = BigInt(usdcChange.amount);
-      token = 'USDC';
-      if (amountValue > 0) {
-        amount = (Number(amountValue) / 1e6).toString();
-        type = 'receive';
-        otherParty = tx.transaction?.data?.sender || '';
-      } else if (amountValue < 0) {
-        amount = (Math.abs(Number(amountValue)) / 1e6).toString();
-        type = 'send';
-        otherParty = tx.transaction?.data?.transaction?.data?.transactions?.find(
-          (t: any) => t.TransferSui || t.TransferObject
-        )?.recipient || '';
-      }
-    }
-
-    return {
-      id: tx.digest,
-      type,
-      status: tx.effects?.status?.status === 'success' ? 'success' : 'failure',
-      amount: `${amount} ${token}`,
-      token,
-      gbpValue: 0,
-      profitLoss: 0,
-      timestamp: parseInt(tx.timestampMs),
-      from: type === 'receive' ? otherParty : walletAddress,
-      to: type === 'send' ? otherParty : walletAddress,
-      raw: tx,
-    };
   }).filter(Boolean); // Filter out any null/undefined entries
 }

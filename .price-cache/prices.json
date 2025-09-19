@@ -1,194 +1,337 @@
 [
   {
+    "date": "2025-09-19",
+    "USDC": 1,
+    "SUI": 3.7983,
+    "GBP": 0.78,
+    "FUNDS": 1095.3236872473256,
+    "TOKENS_AVAILABLE": 998942,
+    "timestamp": 1758266014057,
+    "DEEP": 0.13712
+  },
+  {
+    "date": "2025-09-18",
+    "USDC": 1,
+    "SUI": 3.8938,
+    "GBP": 0.733,
+    "DEEP": 0.14052,
+    "FUNDS": 1122.9447169568962,
+    "TOKENS_AVAILABLE": 998942,
+    "timestamp": 1758239902928
+  },
+  {
+    "date": "2025-09-17",
+    "USDC": 1,
+    "SUI": 3.6007043130728174,
+    "GBP": 0.735,
+    "DEEP": 0.134319,
+    "FUNDS": 1130.88,
+    "TOKENS_AVAILABLE": 998942
+  },
+  {
+    "date": "2025-09-16",
+    "USDC": 1,
+    "SUI": 3.5221831715688565,
+    "GBP": 0.738,
+    "DEEP": 0.134319,
+    "FUNDS": 1127.63,
+    "TOKENS_AVAILABLE": 998942
+  },
+  {
     "date": "2025-09-15",
     "USDC": 1,
     "SUI": 3.69071473841085,
-    "GBP": 0.738
+    "GBP": 0.738,
+    "DEEP": 0.134319,
+    "FUNDS": 1121.71,
+    "TOKENS_AVAILABLE": 998942
+  },
+  {
+    "date": "2025-09-14",
+    "USDC": 1,
+    "SUI": 3.718767514816712,
+    "GBP": 0.737,
+    "DEEP": 0.134319,
+    "FUNDS": 140,
+    "TOKENS_AVAILABLE": 999870
   },
   {
     "date": "2025-09-13",
     "USDC": 1,
     "SUI": 3.718767514816712,
-    "GBP": 0.737
+    "GBP": 0.737,
+    "DEEP": 0.134319,
+    "FUNDS": 136.14,
+    "TOKENS_AVAILABLE": 999870
   },
   {
     "date": "2025-09-12",
     "USDC": 1,
     "SUI": 3.658312,
-    "GBP": 0.737284
+    "GBP": 0.737284,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-09-11",
     "USDC": 1,
     "SUI": 3.61802,
-    "GBP": 0.736597
+    "GBP": 0.736597,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-09-10",
     "USDC": 1,
     "SUI": 3.550823,
-    "GBP": 0.738874
+    "GBP": 0.738874,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-09-09",
     "USDC": 1,
     "SUI": 3.505037,
-    "GBP": 0.737871
+    "GBP": 0.737871,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-09-08",
     "USDC": 1,
     "SUI": 3.443573,
-    "GBP": 0.737871
+    "GBP": 0.737871,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-09-07",
     "USDC": 1,
     "SUI": 3.38297,
-    "GBP": 0.740302
+    "GBP": 0.740302,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-09-06",
     "USDC": 1,
     "SUI": 3.359117,
-    "GBP": 0.740302
+    "GBP": 0.740302,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-09-05",
     "USDC": 1,
     "SUI": 3.369377,
-    "GBP": 0.740324
+    "GBP": 0.740324,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-09-04",
     "USDC": 1,
     "SUI": 3.308115,
-    "GBP": 0.743837
+    "GBP": 0.743837,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-09-03",
     "USDC": 1,
     "SUI": 3.348229,
-    "GBP": 0.744003
+    "GBP": 0.744003,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-09-02",
     "USDC": 1,
     "SUI": 3.266447,
-    "GBP": 0.747233
+    "GBP": 0.747233,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-09-01",
     "USDC": 1,
     "SUI": 3.221533,
-    "GBP": 0.738141
+    "GBP": 0.738141,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-08-31",
     "USDC": 1,
     "SUI": 3.311187,
-    "GBP": 0.740593
+    "GBP": 0.740593,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-08-30",
     "USDC": 1,
     "SUI": 3.296864,
-    "GBP": 0.740576
+    "GBP": 0.740576,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-08-29",
     "USDC": 1,
     "SUI": 3.346927,
-    "GBP": 0.740466
+    "GBP": 0.740466,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-08-28",
     "USDC": 1,
     "SUI": 3.474118,
-    "GBP": 0.740154
+    "GBP": 0.740154,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-08-27",
     "USDC": 1,
     "SUI": 3.46298,
-    "GBP": 0.740557
+    "GBP": 0.740557,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-08-26",
     "USDC": 1,
     "SUI": 3.407864,
-    "GBP": 0.741947
+    "GBP": 0.741947,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-08-25",
     "USDC": 1,
     "SUI": 3.51111,
-    "GBP": 0.743334
+    "GBP": 0.743334,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-08-24",
     "USDC": 1,
     "SUI": 3.689563,
-    "GBP": 0.740203
+    "GBP": 0.740203,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-08-23",
     "USDC": 1,
     "SUI": 3.719894,
-    "GBP": 0.739317
+    "GBP": 0.739317,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-08-22",
     "USDC": 1,
     "SUI": 3.52265,
-    "GBP": 0.745245
+    "GBP": 0.745245,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-08-21",
     "USDC": 1,
     "SUI": 3.472617,
-    "GBP": 0.745245
+    "GBP": 0.745245,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-08-20",
     "USDC": 1,
     "SUI": 3.496277,
-    "GBP": 0.742608
+    "GBP": 0.742608,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-08-19",
     "USDC": 1,
     "SUI": 3.534945,
-    "GBP": 0.741455
+    "GBP": 0.741455,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-08-18",
     "USDC": 1,
     "SUI": 3.616625,
-    "GBP": 0.740316
+    "GBP": 0.740316,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-08-17",
     "USDC": 1,
     "SUI": 3.813787,
-    "GBP": 0.737711
+    "GBP": 0.737711,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-08-16",
     "USDC": 1,
     "SUI": 3.73628,
-    "GBP": 0.73779
+    "GBP": 0.73779,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-08-15",
     "USDC": 1,
     "SUI": 3.770911,
-    "GBP": 0.737735
+    "GBP": 0.737735,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   },
   {
     "date": "2025-08-14",
     "USDC": 1,
     "SUI": 3.92142,
-    "GBP": 0.739098
+    "GBP": 0.739098,
+    "DEEP": 0.134319,
+    "FUNDS": 1,
+    "TOKENS_AVAILABLE": 999999
   }
 ]
