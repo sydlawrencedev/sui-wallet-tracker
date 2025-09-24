@@ -126,7 +126,7 @@ async function getPrice(
     return mid_price
 }
 
-async function transactSwap(
+async function transact(
     tx: Transaction,
     baseOut: any,
     quoteOut: any,
@@ -184,6 +184,7 @@ async function swapUSDCForSUI(
         // Create a new transaction
         const tx = new Transaction();
         
+        // what can I do here, instead of swap? can I place an order?
         const [baseOut, quoteOut, deepOut] = deepbookClient.deepBook.swapExactQuoteForBase({
             poolKey: 'SUI_USDC',
             amount: amount, // amount of SUI to swap
@@ -191,7 +192,7 @@ async function swapUSDCForSUI(
             minOut: minOut, // minimum amount of USDC to receive or transaction fails
         })(tx as any);
 
-        var success = await transactSwap(tx, baseOut, quoteOut, deepOut);
+        var success = await transact(tx, baseOut, quoteOut, deepOut);
         return success;
         // No explicit return needed as the function is declared to return void
     } catch (error) {
@@ -215,7 +216,7 @@ async function swapSUIForUSDC(
             minOut: minOut, // minimum amount of USDC to receive or transaction fails
         })(tx as any);
 
-        var success = await transactSwap(tx, baseOut, quoteOut, deepOut);
+        var success = await transact(tx, baseOut, quoteOut, deepOut);
        return success;
         // No explicit return needed as the function is declared to return void
     } catch (error) {

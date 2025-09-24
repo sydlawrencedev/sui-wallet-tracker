@@ -56,29 +56,29 @@ interface FundsChartProps {
 
 function FundsChart({ latestTokenValue, suiPrice }: FundsChartProps) {
   const [priceData, setPriceData] = useState<PriceData[]>([]);
-  const [suiPriceData, setSuiPriceData] = useState<{date: string, price: number}[]>([]);
+  const [suiPriceData, setSuiPriceData] = useState<{ date: string, price: number }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        
+
         // Fetch both price history and SUI price data in parallel
         const [priceResponse, suiResponse] = await Promise.all([
           fetch('/api/price-history'),
           fetch('/api/token-price?token=SUI&days=30') // Assuming you have an endpoint for SUI price history
         ]);
-        
+
         if (!priceResponse.ok || !suiResponse.ok) {
           throw new Error(`Error fetching data: ${priceResponse.status} ${suiResponse.status}`);
         }
-        
+
         const [priceData, suiData] = await Promise.all([
           priceResponse.json(),
           suiResponse.json()
         ]);
-        
+
         setPriceData(priceData.data);
         setSuiPriceData(suiData.data || []);
       } catch (error) {
@@ -105,7 +105,7 @@ function FundsChart({ latestTokenValue, suiPrice }: FundsChartProps) {
 
     // Make a copy of the data to avoid mutating the original
     const chartData = [...sortedAndFilteredData];
-    
+
     // If we have a latest token value, update the most recent data point
     if (latestTokenValue !== undefined && chartData.length > 0) {
       const latestDataPoint = { ...chartData[chartData.length - 1] };
@@ -116,13 +116,13 @@ function FundsChart({ latestTokenValue, suiPrice }: FundsChartProps) {
     }
 
     const labels = chartData.map(item => item.date);
-    
+
     // Calculate the share price: FUNDS / (1000000 - TOKENS_AVAILABLE)
     const sharePrices = chartData.map(item => {
       const denominator = 1000000 - item.TOKENS_AVAILABLE;
       return denominator > 0 ? item.FUNDS / denominator : 0;
     });
-    
+
     // Prepare SUI price data
     const suiPrices = suiPriceData
       .filter(item => new Date(item.date).getTime() >= minDate)
@@ -130,7 +130,7 @@ function FundsChart({ latestTokenValue, suiPrice }: FundsChartProps) {
         x: item.date,
         y: item.price
       }));
-      
+
     // If we have a current SUI price, update the most recent data point
     if (suiPrice && suiPrices.length > 0) {
       suiPrices[suiPrices.length - 1].y = suiPrice;
@@ -141,7 +141,10 @@ function FundsChart({ latestTokenValue, suiPrice }: FundsChartProps) {
       datasets: [
         {
           label: 'Share Price',
-          data: sharePrices,
+          data: sharePrices.map((price, index) => ({
+            x: labels[index],
+            y: price
+          })),
           borderColor: 'rgba(96, 165, 250, 0.8)',
           backgroundColor: 'rgba(96, 165, 250, 0.1)',
           borderWidth: 2,
@@ -175,7 +178,7 @@ function FundsChart({ latestTokenValue, suiPrice }: FundsChartProps) {
       },
       tooltip: {
         callbacks: {
-          label: function(context: any) {
+          label: function (context: any) {
             let label = context.dataset.label || '';
             if (label) {
               label += ': ';
@@ -211,7 +214,7 @@ function FundsChart({ latestTokenValue, suiPrice }: FundsChartProps) {
         },
         ticks: {
           color: '#60a5fa',
-          callback: function(value: any) {
+          callback: function (value: any) {
             return new Intl.NumberFormat('en-US', {
               style: 'currency',
               currency: 'USD',
@@ -235,7 +238,7 @@ function FundsChart({ latestTokenValue, suiPrice }: FundsChartProps) {
         },
         ticks: {
           color: '#a855f7',
-          callback: function(value: any) {
+          callback: function (value: any) {
             return new Intl.NumberFormat('en-US', {
               style: 'currency',
               currency: 'USD',
@@ -294,12 +297,12 @@ export default function PerformanceMetrics({ portfolioValue, suiPrice }: Perform
           fetch('/backtests/latest.json'),
           fetch('/api/price-history')
         ]);
-        
+
         if (backtestResponse.ok) {
           const backtestData = await backtestResponse.json();
           setMetrics(backtestData);
         }
-        
+
         if (pricesResponse.ok) {
           const { data: prices } = await pricesResponse.json();
           if (prices && prices.length > 0) {
@@ -335,7 +338,7 @@ export default function PerformanceMetrics({ portfolioValue, suiPrice }: Perform
     const now = new Date();
     const date = new Date(dateString);
     const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
+
     const intervals = {
       year: 31536000,
       month: 2592000,
@@ -345,14 +348,14 @@ export default function PerformanceMetrics({ portfolioValue, suiPrice }: Perform
       minute: 60,
       second: 1
     };
-    
+
     for (const [unit, secondsInUnit] of Object.entries(intervals)) {
       const interval = Math.floor(seconds / secondsInUnit);
       if (interval >= 1) {
         return interval === 1 ? `${interval} ${unit} ago` : `${interval} ${unit}s ago`;
       }
     }
-    
+
     return 'just now';
   };
 
@@ -360,93 +363,85 @@ export default function PerformanceMetrics({ portfolioValue, suiPrice }: Perform
   const firstTrade = metrics.trades.length > 0 ? metrics.trades[0] : null;
 
   return (
-    
-<div>
-    <div className="flex flex-row gap-4 w-full">
 
-      <div className="flex-1 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-4 border border-gray-800">
-        <h3 className="text-sm font-medium text-gray-400 mb-1">Live Net Asset Value (NAV)</h3>
-        {portfolioValue !== undefined ? (
-          
-            <AnimatedNumber 
-              value={portfolioValue} 
+    <div>
+      <div className="flex flex-row gap-4 w-full">
+
+        <div title={portfolioValue.toString()} className="flex-1 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-4 border border-gray-800">
+          <h3 className="text-sm font-medium text-gray-400 mb-1">Live Net Asset Value (NAV)</h3>
+          {portfolioValue !== undefined ? (
+
+            <AnimatedNumber
+              value={portfolioValue}
               duration={300000}
               className="text-2xl font-semibold"
               decimalPlaces={8}
               showDirectionColor={true}
               currency="USD"
             />
-          
-        ) : (
-          <p className="text-2xl font-semibold text-blue-400">Loading...</p>
-        )}
-      </div>
-      <div className="flex-1 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-4 border border-gray-800">
-        <h3 className="text-sm font-medium text-gray-400 mb-1">Live Share Price</h3>
-        {tokensInCirculation !== undefined && portfolioValue !== undefined ? (
-          <AnimatedNumber 
-            value={portfolioValue / tokensInCirculation} 
-            duration={300000}
-            className="text-2xl font-semibold inline-block"
-            decimalPlaces={8}
-            showDirectionColor={true}
-            currency="USD"
-          />
-        ) : (
-          <p className="text-2xl font-semibold text-blue-400">Loading...</p>
-        )}
-      </div>
 
-     
-       {lastTrade && (
-        <div className="flex-1 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-4 border border-gray-800">
-          <h3 className="text-sm font-medium text-gray-400 mb-1">Last Trade</h3>
-          <p className="text-2xl font-semibold text-green-400" title={new Date(lastTrade.exitTime).toLocaleString()}>
-            {formatTimeSince(lastTrade.exitTime)}
+          ) : (
+            <p className="text-2xl font-semibold text-blue-400">Loading...</p>
+          )}
+        </div>
+        <div title={(portfolioValue / tokensInCirculation).toString()} className="flex-1 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-4 border border-gray-800">
+          <h3 className="text-sm font-medium text-gray-400 mb-1">Live Share Price</h3>
+          {tokensInCirculation !== undefined && portfolioValue !== undefined ? (
+            <AnimatedNumber
+              value={portfolioValue / tokensInCirculation}
+              duration={300000}
+              className="text-2xl font-semibold inline-block"
+              decimalPlaces={8}
+              showDirectionColor={true}
+              currency="USD"
+            />
+          ) : (
+            <p className="text-2xl font-semibold text-blue-400">Loading...</p>
+          )}
+        </div>
+
+        <div title={(1000000 - (tokensInCirculation || 0)).toString()} className="flex-1 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-4 border border-gray-800">
+          <h3 className="text-sm font-medium text-gray-400 mb-1">Shares available</h3>
+          <p className="text-2xl font-semibold text-blue-400">
+            <AnimatedNumber
+              value={1000000 - (tokensInCirculation || 0)}
+              duration={300000}
+              className="text-2xl font-semibold inline-block"
+              decimalPlaces={0}
+              showDirectionColor={true}
+              currency=""
+            />
+
+
           </p>
         </div>
-      )}
-      <div className="flex-1 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-4 border border-gray-800">
-        <h3 className="text-sm font-medium text-gray-400 mb-1">Recent returns</h3>
-        <p className="text-2xl font-semibold text-green-400">
-          Est&nbsp; 
-          <AnimatedNumber 
-            value={Math.min(10,Number((((1 + metrics.totalReturn/100) ** (365/3.5) * 100).toFixed(2))), 100)} 
-            duration={100000}
-            className="text-2xl font-semibold inline-block"
-            decimalPlaces={2}
-            showDirectionColor={true}
-            currency=""
-          />
-          % APR
-        </p>
+        <div title={suiPrice.toString()} className="flex-1 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-4 border border-gray-800">
+          <h3 className="text-sm font-medium text-gray-400 mb-1">Live SUI Price</h3>
+          {suiPrice !== undefined ? (
+            <AnimatedNumber
+              value={suiPrice}
+              duration={300000}
+              className="text-2xl font-semibold inline-block"
+              decimalPlaces={2}
+              showDirectionColor={true}
+              currency="USD"
+            />
+          ) : (
+            <p className="text-2xl font-semibold text-blue-400">Loading...</p>
+          )}
+        </div>
       </div>
-      <div className="flex-1 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-4 border border-gray-800">
-        <h3 className="text-sm font-medium text-gray-400 mb-1">Shares available</h3>
-        <p className="text-2xl font-semibold text-blue-400">
-        <AnimatedNumber 
-            value={1000000 - (tokensInCirculation || 0)} 
-            duration={300000}
-            className="text-2xl font-semibold inline-block"
-            decimalPlaces={0}
-            showDirectionColor={true}
-            currency=""
-          />
+      <p className="text-xs text-gray-400" style={{ fontSize: '12px' }}>*Live prices may be delayed by up to 5 minutes. These figures are illustrative only, based on hypothetical assumptions. Past performance is not a reliable indicator of future results. Your capital is at risk and you may lose some or all of your investment.</p>
 
-
-        </p>
+      <div className="w-full mb-8">
+        <h3 className="text-lg font-medium mb-4">Share Price Over Time</h3>
+        <div className="h-120 w-full bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-6 border border-gray-800">
+          <FundsChart
+            latestTokenValue={tokensInCirculation && portfolioValue ? portfolioValue / tokensInCirculation : undefined}
+            suiPrice={suiPrice}
+          />
+        </div>
       </div>
-    </div>
-    <p className="text-xs text-gray-400">*Live prices may be delayed by up to 5 minutes</p>
-    <div className="w-full mb-8">
-      <h3 className="text-lg font-medium mb-4">Share Price Over Time</h3>
-      <div className="h-120 w-full bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-6 border border-gray-800">
-        <FundsChart 
-          latestTokenValue={tokensInCirculation && portfolioValue ? portfolioValue / tokensInCirculation : undefined} 
-          suiPrice={suiPrice}
-        />
-      </div>
-    </div>
     </div>
   );
 }

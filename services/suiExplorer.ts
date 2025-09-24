@@ -1,6 +1,9 @@
 interface SuiTransaction {
   digest: string;
   timestampMs: string;
+  json: any;
+  data: any;
+  raw: any;
   success: boolean;
   rawEvent?: {
     id: {
@@ -125,6 +128,45 @@ interface SuiTransaction {
   }>;
 }
 
+export async function getGasFees(
+  txDigest: string,
+  cb: Function,
+): Promise<{ data: SuiTransaction[]; nextCursor: string | null }> {
+  console.log('Fetching transaction fees for address:', txDigest);
+  const query = {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "sui_getTransactionBlock",
+    "params": [
+      {
+        "digest": txDigest
+      }
+    ]
+  };
+
+  try {
+    const response = await fetch('https://fullnode.mainnet.sui.io:443', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(query),
+    });
+
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch transactions: ${response.statusText}`);
+    } else {
+      const responseData = await response.json();
+
+      cb(responseData);
+    }
+  } catch (error) {
+    console.error('Error fetching transactions:', error);
+    return cb({ data: [], nextCursor: null });
+  }
+}
+
 export async function fetchWalletTransactions(
   address: string,
   cursor: string | null = null,
@@ -144,7 +186,7 @@ export async function fetchWalletTransactions(
       false
     ]
   };
-  
+
   try {
     const response = await fetch('https://fullnode.mainnet.sui.io:443', {
       method: 'POST',
@@ -159,16 +201,16 @@ export async function fetchWalletTransactions(
     }
 
     const responseData = await response.json();
-    
+
     if (responseData.error) {
       console.error('API Error:', responseData.error);
       return { data: [], nextCursor: null };
     }
-    
+
     // The response data could be in different formats depending on the RPC method
     let transactions: any[] = [];
     let nextCursor: string | null = null;
-    
+
     if (responseData.result?.data) {
       // If we have a result.data array, use that
       transactions = responseData.result.data;
@@ -180,90 +222,28 @@ export async function fetchWalletTransactions(
       // If we have a single result object
       transactions = [responseData.result];
     }
-    
+
     console.log(`Found ${transactions.length} transactions in the response`);
-    
+
     // Process each transaction
     const activities = transactions.map((tx: any) => {
       // Handle different response formats
       const event = tx.rawEvent || tx.raw || tx;
       const timestampMs = tx.timestampMs || event.timestampMs || Date.now().toString();
-      
       // Create a base transaction object with required fields
       const baseTx: any = {
         digest: tx.digest || event.id?.txDigest || 'unknown',
         timestampMs: timestampMs.toString(),
-        success: tx.status?.status === 'success' || true,
-        gasUsed: tx.gasUsed || {
-          computationCost: '0',
-          storageCost: '0',
-          storageRebate: '0'
-        },
-        transaction: tx.transaction || {
-          data: {
-            messageVersion: '1',
-            transaction: {
-              kind: 'ProgrammableTransaction',
-              data: {}
-            },
-            sender: event.sender || '',
-            gasData: {
-              payment: [],
-              owner: '',
-              price: '0',
-              budget: '0'
-            }
-          }
-        },
-        effects: tx.effects || {
-          status: { status: 'success' },
-          gasUsed: {
-            computationCost: '0',
-            storageCost: '0',
-            storageRebate: '0'
-          },
-          modifiedAtVersions: [],
-          transactionDigest: tx.digest || 'unknown',
-          created: [],
-          mutated: [],
-          deleted: [],
-          gasObject: {
-            owner: '',
-            reference: {
-              objectId: '',
-              version: 0,
-              digest: ''
-            }
-          },
-          eventsDigest: '',
-          dependencies: []
-        },
-        events: tx.events || [],
-        objectChanges: tx.objectChanges || [],
-        balanceChanges: tx.balanceChanges || [],
+
         // Include the raw event data
-        rawEvent: event
+        rawEvent: event,
+        raw: tx,
       };
-      
-      // Add event data if available
-      if (event) {
-        baseTx.event = {
-          id: event.id || { txDigest: baseTx.digest, eventSeq: '0' },
-          packageId: event.packageId || '',
-          transactionModule: event.transactionModule || '',
-          sender: event.sender || '',
-          type: event.type || '',
-          parsedJson: event.parsedJson || {},
-          bcs: event.bcs || '',
-          timestampMs: timestampMs.toString()
-        };
-      }
-      
       return baseTx;
     });
-    
+
     console.log(`Processed ${activities.length} transactions`);
-    
+
     return {
       data: activities,
       nextCursor: nextCursor
@@ -321,12 +301,12 @@ function normalizeTokenSymbol(token: string): string {
 async function getTokenPrice(token: string): Promise<number> {
   const normalizedToken = normalizeTokenSymbol(token);
   const now = Date.now();
-  
+
   // First, try to find a cached price (case-insensitive)
   const cachedToken = Object.keys(tokenPriceCache).find(
     k => normalizeTokenSymbol(k) === normalizedToken
   );
-  
+
   // If we have a valid cached price, return it
   if (cachedToken) {
     const cachedPrice = getCachedPrice(cachedToken);
@@ -334,10 +314,10 @@ async function getTokenPrice(token: string): Promise<number> {
       return cachedPrice;
     }
   }
-  
+
   // If we have an expired cache, use it while we fetch a new one
   const expiredCache = cachedToken ? tokenPriceCache[cachedToken]?.priceUSD : undefined;
-  
+
   // If we're rate limited, use expired cache or default price
   if (now < rateLimitResetTime) {
     console.warn(`Rate limited, using ${expiredCache !== undefined ? 'expired cached' : 'default'} price for ${token}`);
@@ -346,26 +326,26 @@ async function getTokenPrice(token: string): Promise<number> {
 
   try {
     // Determine the base URL based on environment
-    const baseUrl = typeof window === 'undefined' 
+    const baseUrl = typeof window === 'undefined'
       ? process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
       : '';
-      
+
     // Use the API endpoint with proper base URL
     const response = await fetch(`${baseUrl}/api/token-price?token=${token}`, {
       headers: {
         'Content-Type': 'application/json',
       },
     });
-    
+
     // Handle rate limiting (status 429)
     if (response.status === 429) {
       // Try to get Retry-After header, default to 60 seconds if not available
       const retryAfter = parseInt(response.headers.get('Retry-After') || '60', 10) * 1000;
       rateLimitResetTime = now + retryAfter;
-      console.warn(`Rate limited, will retry after ${retryAfter/1000} seconds`);
+      console.warn(`Rate limited, will retry after ${retryAfter / 1000} seconds`);
       return expiredCache !== undefined ? expiredCache : (DEFAULT_PRICES[token] || 0);
     }
-    
+
     if (!response.ok) {
       console.error(`Failed to fetch ${token} price: ${response.statusText}`);
       // If we have an expired cache, use it
@@ -373,7 +353,7 @@ async function getTokenPrice(token: string): Promise<number> {
         console.warn(`Using expired cached price for ${token} due to error`);
         return expiredCache;
       }
-      
+
       // Try to find a default price with case-insensitive match
       const defaultPriceKey = Object.keys(DEFAULT_PRICES).find(
         k => normalizeTokenSymbol(k) === normalizedToken
@@ -384,20 +364,20 @@ async function getTokenPrice(token: string): Promise<number> {
       }
       return 0;
     }
-    
+
     const data = await response.json();
     const price = data.price;
-    
+
     // Update the cache with the new price using the original token case for consistency
     const existingCacheKey = Object.keys(tokenPriceCache).find(
       k => normalizeTokenSymbol(k) === normalizedToken
     ) || token; // Use the provided token as key if no existing cache found
-    
+
     tokenPriceCache[existingCacheKey] = {
       priceUSD: price,
       timestamp: now,
     };
-    
+
     return price;
   } catch (error) {
     console.error(`Error fetching ${token} price:`, error);
@@ -407,7 +387,7 @@ async function getTokenPrice(token: string): Promise<number> {
 
 export async function fetchWalletBalances(address: string): Promise<TokenBalance[]> {
   try {
-    
+
     // First, get all coins owned by the address
     const response = await fetch('https://fullnode.mainnet.sui.io:443', {
       method: 'POST',
@@ -421,36 +401,36 @@ export async function fetchWalletBalances(address: string): Promise<TokenBalance
     });
 
     const data = await response.json();
-    
+
     if (!data.result) {
       console.error('[fetchWalletBalances] Error in API response:', data.error);
       return [];
     }
-    
+
     // Process each coin type
     const balances = await Promise.all(
       data.result.map(async (balance: any, index: number) => {
         const coinType = balance.coinType;
         let symbol = 'UNKNOWN';
         let decimals = 0;
-        
+
         // Handle SUI token (more flexible matching for different SUI coin types)
-        if (coinType.endsWith('::sui::SUI') || coinType.endsWith('::sui::sui::SUI') || 
-            coinType.endsWith('0x2::sui::SUI') || coinType.endsWith('0x2::sui::sui::SUI')) {
+        if (coinType.endsWith('::sui::SUI') || coinType.endsWith('::sui::sui::SUI') ||
+          coinType.endsWith('0x2::sui::SUI') || coinType.endsWith('0x2::sui::sui::SUI')) {
           symbol = 'SUI';
           decimals = 9;
-        } 
+        }
         // Handle USDC token (more flexible matching for different USDC implementations)
-        else if (coinType.endsWith('::usdc::USDC') || 
-                coinType.includes('USDC') ||
-                coinType.includes('usdc') ||
-                coinType.includes('0x5d4b302506645c37ff133b98c4b50a5ae14841659738d86823d861affcf25683::usdc::USDC')) {
+        else if (coinType.endsWith('::usdc::USDC') ||
+          coinType.includes('USDC') ||
+          coinType.includes('usdc') ||
+          coinType.includes('0x5d4b302506645c37ff133b98c4b50a5ae14841659738d86823d861affcf25683::usdc::USDC')) {
           symbol = 'USDC';
           decimals = 6;
         }
         // Handle DEEP token
-        else if (coinType.endsWith('::deep::DEEP') || 
-                coinType.includes('0xdeeb7a4662eec9f2f3def03fb937a663dddaa2e215b8078a284d026b7946c270::deep::DEEP')) {
+        else if (coinType.endsWith('::deep::DEEP') ||
+          coinType.includes('0xdeeb7a4662eec9f2f3def03fb937a663dddaa2e215b8078a284d026b7946c270::deep::DEEP')) {
           symbol = 'DEEP';
           decimals = 6;
         } else {
@@ -464,11 +444,11 @@ export async function fetchWalletBalances(address: string): Promise<TokenBalance
 
         const balanceValue = BigInt(balance.totalBalance || '0');
         const numericBalance = Number(balanceValue) / (10 ** decimals);
-        
+
         try {
           // Get token price in USD
           const priceUSD = await getTokenPrice(symbol);
-          
+
           // Handle zero balance case
           if (numericBalance === 0) {
             return {
@@ -485,10 +465,10 @@ export async function fetchWalletBalances(address: string): Promise<TokenBalance
               lastUpdated: new Date().toISOString()
             } as TokenBalance;
           }
-          
+
           // Calculate USD value first
           const valueUSD = numericBalance * priceUSD;
-          
+
           // Convert USD value to GBP
           let valueGBP = 0;
           try {
@@ -497,7 +477,7 @@ export async function fetchWalletBalances(address: string): Promise<TokenBalance
             console.error('Error converting to GBP, using 1:1 rate:', error);
             valueGBP = valueUSD; // Fallback to USD value if conversion fails
           }
-          
+
           return {
             symbol,
             balance: balanceValue.toString(),
@@ -541,18 +521,18 @@ export async function fetchAllWalletTransactions(
   while (hasMore) {
     const result = await fetchWalletTransactions(address, cursor, limit);
     const { data, nextCursor } = result;
-    
+
     console.log(`Fetched ${data.length} transactions, nextCursor:`, nextCursor);
-    
+
     // Filter transactions by date range if provided
     const filteredData = data.filter(tx => {
       const txTime = parseInt(tx.timestampMs);
-      return (!startTime || txTime >= startTime) && 
-             (!endTime || txTime <= endTime);
+      return (!startTime || txTime >= startTime) &&
+        (!endTime || txTime <= endTime);
     });
 
     allTransactions = [...allTransactions, ...filteredData];
-    
+
     // If we got fewer transactions than requested, or if we've hit our date range limit
     if (data.length < limit || (endTime && filteredData.length < data.length)) {
       hasMore = false;
@@ -560,7 +540,7 @@ export async function fetchAllWalletTransactions(
       cursor = nextCursor;
       if (!cursor) hasMore = false;
     }
-    
+
     // Small delay to avoid rate limiting
     await new Promise(resolve => setTimeout(resolve, 200));
   }
@@ -582,53 +562,45 @@ export function processTransactionData(transactions: SuiTransaction[], walletAdd
   return transactions.flatMap(tx => {
     try {
       const transfers: any[] = [];
-      
-      // Process balance changes
-      if (tx.effects?.events) {
-        tx.effects.events.forEach(event => {
-          // Handle coin balance changes
-          if (event.coinBalanceChange) {
-            const { coinType, amount, owner } = event.coinBalanceChange;
-            const isReceive = owner?.AddressOwner === walletAddress;
-            
-            transfers.push({
-              amount: amount.toString(),
-              token: getTokenSymbol(coinType),
-              from: isReceive ? undefined : walletAddress,
-              to: isReceive ? walletAddress : undefined,
-              decimals: 9 // Default, adjust based on token if needed
-            });
-          }
-        });
+
+      const setSender = function (sender) {
+        if (sender === walletAddress) {
+          return 'self';
+        }
+        return sender;
       }
-      
-      // If no transfers found, try to get basic info from the transaction
-      if (transfers.length === 0) {
-        return {
-          id: tx.digest,
-          type: tx.sender === walletAddress ? 'send' : 'receive',
-          status: tx.effects?.status?.status === 'success' ? 'success' : 'failure',
-          timestamp: parseInt(tx.timestampMs || '0'),
-          transfers: [],
-          usdValue: 0,
-          profitLoss: 0,
-          raw: tx
-        };
+      const setAsset = function (asset) {
+        let assetName = '';
+        if (asset !== undefined && asset['name'] !== undefined) {
+          assetName = asset.name;
+        }
+        if (assetName === "0000000000000000000000000000000000000000000000000000000000000002::sui::SUI") {
+          return 'SUI';
+        }
+        if (assetName === "dba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC") {
+          return 'USDC';
+        }
+        if (assetName === "deeb7a4662eec9f2f3def03fb937a663dddaa2e215b8078a284d026b7946c270::deep::DEEP") {
+          return 'DEEP';
+        }
+        return asset;
       }
-      
-      return {
+
+      transfers.push({
         id: tx.digest,
-        type: transfers.length > 1 ? 'batch' : transfers[0]?.to === walletAddress ? 'receive' : 'send',
-        status: tx.effects?.status?.status === 'success' ? 'success' : 'failure',
         timestamp: parseInt(tx.timestampMs || '0'),
-        transfers,
-        usdValue: 0, // Will be populated later with price data
-        profitLoss: 0,
-        raw: tx,
-        isSwap: transfers.length >= 2 && 
-               transfers.some(t => t.amount.startsWith('-')) &&
-               transfers.some(t => !t.amount.startsWith('-'))
-      };
+        raw: tx.raw,
+        sender: setSender(tx.raw.sender),
+        owner: tx.raw.parsedJson.owner || undefined,
+        module: tx.raw.transactionModule,
+        json: tx.raw.parsedJson,
+        type: tx.raw.type,
+        amount: tx.raw.parsedJson.amount || undefined,
+        asset: setAsset(tx.raw.parsedJson.asset),
+      });
+
+      return transfers;
+
     } catch (error) {
       console.error('Error processing transaction:', tx.digest, error);
       return null;

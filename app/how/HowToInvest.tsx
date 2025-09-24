@@ -21,15 +21,15 @@ export default function HowToInvest() {
           Past performance is not a reliable indicator of future results.<br />
           Investments in unlisted securities are illiquid and may be difficult to realise.
         </p>
-        
+
         <p className="mt-4">
           You should only be reading this because it has been sent to you directly. This hasn't been publicly promoted anywhere.
         </p>
-        
+
         <p className="font-semibold text-amber-400 mt-4">
           This is not a public offer.
         </p>
-        
+
         <p className="mt-4">
           Only professional investors, certified high net worth individuals or self-certified sophisticated investors should consider investing in AT1000i.
         </p>
@@ -37,19 +37,19 @@ export default function HowToInvest() {
 
       <div className="mb-8">
         <h2 className="text-2xl font-semibold text-white mt-8 mb-4">How to buy shares in the fund?</h2>
-        
+
         <div className="mb-6">
           <h3 className="text-xl font-medium text-gray-300 mt-6 mb-3">Buy USDC</h3>
           <p>
             So to start off, you need to buy USDC. You need to do this via an exchange.
-            </p>
-            <ul className="list-disc pl-6 mb-4" style={{paddingLeft: '20px'}}>
-                <li><a href="https://www.coinbase.com/" target="_blank">Coinbase</a></li>
-                <li><a href="https://gemini.com/" target="_blank">Gemini</a></li>
-                <li><a href="https://www.kraken.com/" target="_blank">Kraken</a></li>
-                <li><a href="https://www.binance.com/" target="_blank">Binance</a></li>
+          </p>
+          <ul className="list-disc pl-6 mb-4" style={{ paddingLeft: '20px' }}>
+            <li><a href="https://www.coinbase.com/" target="_blank">Coinbase</a></li>
+            <li><a href="https://gemini.com/" target="_blank">Gemini</a></li>
+            <li><a href="https://www.kraken.com/" target="_blank">Kraken</a></li>
+            <li><a href="https://www.binance.com/" target="_blank">Binance</a></li>
           </ul>
-            <p>
+          <p>
             You will have a 24 hour cooldown on all new accounts on crypto exchanges. Coinbase Advanced reduces fees, however it can be complicated.
           </p>
           <p className="mt-2">
@@ -60,7 +60,7 @@ export default function HowToInvest() {
         <div className="mb-6">
           <h3 className="text-xl font-medium text-gray-300 mt-6 mb-3">Setup a SUI wallet</h3>
           <p>Download a SUI wallet to your phone. Suggested wallets:</p>
-          <ul className="list-disc pl-6 mb-4" style={{paddingLeft: '20px'}}>
+          <ul className="list-disc pl-6 mb-4" style={{ paddingLeft: '20px' }}>
             <li><a href="https://phantom.com/" target="_blank">Phantom</a></li>
             <li><a href="https://surfwallet.com/" target="_blank">Surf Wallet</a></li>
             <li><a href="https://slushwallet.com/" target="_blank">Slush</a></li>
@@ -85,9 +85,9 @@ export default function HowToInvest() {
               {copied ? 'Copied!' : 'Copy'}
             </button>
           </div>
-          <p><a 
-            href="https://suiscan.xyz/mainnet/account/0xe39d3415072c78f6734135dd6faa1d0d0b62a1a378701a26dc8d38b9e96b85b2" 
-            target="_blank" 
+          <p><a
+            href="https://suiscan.xyz/mainnet/account/0xe39d3415072c78f6734135dd6faa1d0d0b62a1a378701a26dc8d38b9e96b85b2"
+            target="_blank"
             rel="noopener noreferrer"
             className="text-blue-400 hover:text-blue-300 underline inline-block mt-2"
           >
@@ -98,7 +98,7 @@ export default function HowToInvest() {
         <div className="mb-6">
           <h3 className="text-xl font-medium text-gray-300 mt-6 mb-3">Receive your AT1000i token</h3>
           <p>
-            In the future you will receive an AT1000i token which will be your share of the investment. 
+            In the future you will receive an AT1000i token which will be your share of the investment.
             To sell your investment, you will be able to send the token back to the wallet to receive your funds.
           </p>
           <h3 className="text-xl font-medium text-gray-300 mt-6 mb-3">Sell your shares</h3>
@@ -137,23 +137,23 @@ export default function HowToInvest() {
         <h3>Public disclosure</h3>
 
         <p>
-          This fund is run by Minith Labs Limited, a company registered in England and Wales with company number 16632010. 
+          This fund is run by Minith Labs Limited, a company registered in England and Wales with company number 16632010.
         </p>
 
       </div>
       <div className="mb-8">
         <h2 className="text-2xl font-semibold text-white mt-8 mb-4">Management Fees</h2>
-        
+
         <p>
           Management Fees are extracted at the end of each day (00:00 UTC). Using the industry standard 2/20 fee structure. They will be sent from the wallet to the Minith Labs wallet.
         </p>
-        
+
         <p className="mt-2">
-          On days where there is a profit, 20% of the profit will be sent from the wallet to the Minith Labs wallet as management fees.
+          On days where there is a profit, 20% of the profit will be sent from the wallet to the Minith Labs wallet in the form of AT1000i tokens, as management fees. Minith Labs may decide to leave the tokens in the main AT1000i wallet, and extract them at a later date. The fund will cover any transaction fees.
         </p>
-        
+
         <p className="mt-2">
-          There will also be a daily management fee of 0.00547945205% (2% annually) of the total value of the wallet. 
+          There will also be a daily management fee of 0.00547945205% (2% annually) of the total value of the wallet.
         </p>
       </div>
     </div>

@@ -1,1 +1,116 @@
-{"initialBalance":10000,"finalBalance":10240.544155738475,"totalTrades":12,"winningTrades":3,"losingTrades":9,"winRate":25,"avgWin":227.08294147071683,"avgLoss":48.9671854081862,"profitFactor":1.545817126154813,"trades":[{"entryTime":"2025-09-16 04:25:00","entryPrice":3.4987,"position":"long","exitTime":"2025-09-16 07:30:00","exitPrice":3.5287,"pnl":85.74613427844815,"pnlPct":0.8574613427844815,"exitReason":"signal","durationMinutes":185},{"entryTime":"2025-09-17 02:10:00","entryPrice":3.5994,"position":"long","exitTime":"2025-09-17 04:50:00","exitPrice":3.5824,"pnl":-47.635073701932924,"pnlPct":-0.47230093904540676,"exitReason":"signal","durationMinutes":160},{"entryTime":"2025-09-17 05:55:00","entryPrice":3.6104,"position":"long","exitTime":"2025-09-17 08:05:00","exitPrice":3.5942,"pnl":-45.04138022970983,"pnlPct":-0.4487037447374385,"exitReason":"signal","durationMinutes":130},{"entryTime":"2025-09-17 10:55:00","entryPrice":3.5865,"position":"long","exitTime":"2025-09-17 14:20:00","exitPrice":3.5735,"pnl":-36.221917146105625,"pnlPct":-0.36247037501742463,"exitReason":"signal","durationMinutes":205},{"entryTime":"2025-09-17 16:35:00","entryPrice":3.5544,"position":"long","exitTime":"2025-09-17 22:05:00","exitPrice":3.724,"pnl":475.0960445191431,"pnlPct":4.771550753995058,"exitReason":"signal","durationMinutes":330},{"entryTime":"2025-09-18 06:55:00","entryPrice":3.7948,"position":"long","exitTime":"2025-09-18 08:45:00","exitPrice":3.8386,"pnl":120.40664561455924,"pnlPct":1.1542110256139988,"exitReason":"signal","durationMinutes":110},{"entryTime":"2025-09-18 13:45:00","entryPrice":3.8879,"position":"long","exitTime":"2025-09-18 13:55:00","exitPrice":3.8742,"pnl":-37.183878497564365,"pnlPct":-0.3523753182952216,"exitReason":"signal","durationMinutes":10},{"entryTime":"2025-09-18 19:55:00","entryPrice":3.9514,"position":"long","exitTime":"2025-09-18 21:05:00","exitPrice":3.9288,"pnl":-60.141409270465374,"pnlPct":-0.5719491825682141,"exitReason":"signal","durationMinutes":70},{"entryTime":"2025-09-19 00:00:00","entryPrice":3.9052,"position":"long","exitTime":"2025-09-19 01:05:00","exitPrice":3.886,"pnl":-51.402356647258785,"pnlPct":-0.4916521560995612,"exitReason":"signal","durationMinutes":65},{"entryTime":"2025-09-19 01:25:00","entryPrice":3.8898,"position":"long","exitTime":"2025-09-19 01:45:00","exitPrice":3.8695,"pnl":-54.29419070930635,"pnlPct":-0.5218777315029096,"exitReason":"signal","durationMinutes":20},{"entryTime":"2025-09-19 03:00:00","entryPrice":3.8925,"position":"long","exitTime":"2025-09-19 03:25:00","exitPrice":3.8741,"pnl":-48.92168184330512,"pnlPct":-0.47270391779063475,"exitReason":"signal","durationMinutes":25},{"entryTime":"2025-09-19 04:50:00","entryPrice":3.8543,"position":"long","exitTime":"2025-09-19 05:25:00","exitPrice":3.8319,"pnl":-59.862780628027394,"pnlPct":-0.5811690838803323,"exitReason":"signal","durationMinutes":35}],"totalReturn":2.4054415573847474,"hodl":8.64345738295318}
+{
+  "initialBalance": 10000,
+  "finalBalance": 10678.505447954092,
+  "totalTrades": 9,
+  "winningTrades": 4,
+  "losingTrades": 5,
+  "winRate": 44.44444444444444,
+  "avgWin": 225.0519461135782,
+  "avgLoss": 44.34046730004411,
+  "profitFactor": 4.060434358360572,
+  "trades": [
+    {
+      "entryTime": "2025-09-16T06:30:00.000Z",
+      "entryPrice": 3.524,
+      "position": "long",
+      "exitTime": "2025-09-16T14:00:00.000Z",
+      "exitPrice": 3.5745,
+      "pnl": 143.3030646992047,
+      "pnlPct": 1.433030646992047,
+      "exitReason": "signal",
+      "durationMinutes": 450
+    },
+    {
+      "entryTime": "2025-09-16T14:45:00.000Z",
+      "entryPrice": 3.6172,
+      "position": "long",
+      "exitTime": "2025-09-17T02:30:00.000Z",
+      "exitPrice": 3.6051,
+      "pnl": -33.930655502283116,
+      "pnlPct": -0.33451288289284015,
+      "exitReason": "signal",
+      "durationMinutes": 705
+    },
+    {
+      "entryTime": "2025-09-17T18:15:00.000Z",
+      "entryPrice": 3.6364,
+      "position": "long",
+      "exitTime": "2025-09-18T21:45:00.000Z",
+      "exitPrice": 3.8897,
+      "pnl": 704.1865667279671,
+      "pnlPct": 6.965680343196566,
+      "exitReason": "signal",
+      "durationMinutes": 1650
+    },
+    {
+      "entryTime": "2025-09-20T04:00:00.000Z",
+      "entryPrice": 3.6818,
+      "position": "long",
+      "exitTime": "2025-09-20T07:00:00.000Z",
+      "exitPrice": 3.6702,
+      "pnl": -34.069554055280605,
+      "pnlPct": -0.3150632842631408,
+      "exitReason": "signal",
+      "durationMinutes": 180
+    },
+    {
+      "entryTime": "2025-09-20T13:45:00.000Z",
+      "entryPrice": 3.6692,
+      "position": "long",
+      "exitTime": "2025-09-20T21:45:00.000Z",
+      "exitPrice": 3.6712,
+      "pnl": 5.875661954578391,
+      "pnlPct": 0.05450779461462943,
+      "exitReason": "signal",
+      "durationMinutes": 480
+    },
+    {
+      "entryTime": "2025-09-21T12:45:00.000Z",
+      "entryPrice": 3.664,
+      "position": "long",
+      "exitTime": "2025-09-21T17:15:00.000Z",
+      "exitPrice": 3.6274,
+      "pnl": -107.73590667793724,
+      "pnlPct": -0.9989082969432234,
+      "exitReason": "signal",
+      "durationMinutes": 270
+    },
+    {
+      "entryTime": "2025-09-22T22:45:00.000Z",
+      "entryPrice": 3.3633,
+      "position": "long",
+      "exitTime": "2025-09-23T00:30:00.000Z",
+      "exitPrice": 3.3534,
+      "pnl": -31.430002929784678,
+      "pnlPct": -0.2943537597002858,
+      "exitReason": "signal",
+      "durationMinutes": 105
+    },
+    {
+      "entryTime": "2025-09-23T02:45:00.000Z",
+      "entryPrice": 3.369,
+      "position": "long",
+      "exitTime": "2025-09-23T10:00:00.000Z",
+      "exitPrice": 3.3644,
+      "pnl": -14.536217334934918,
+      "pnlPct": -0.1365390323538142,
+      "exitReason": "signal",
+      "durationMinutes": 435
+    },
+    {
+      "entryTime": "2025-09-24T06:00:00.000Z",
+      "entryPrice": 3.3591,
+      "position": "long",
+      "exitTime": "2025-09-24T12:45:00.000Z",
+      "exitPrice": 3.3739,
+      "pnl": 46.84249107256255,
+      "pnlPct": 0.4405942067815734,
+      "exitReason": "signal",
+      "durationMinutes": 405
+    }
+  ],
+  "totalReturn": 6.785054479540922,
+  "hodl": -9.804753820033959,
+  "maxDrawdown": 0,
+  "maxDrawdownPct": 1.682110574773107
+}

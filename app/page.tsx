@@ -81,7 +81,7 @@ export default function Home() {
             AT1000i &alpha; Investment Fund
           </h1>
           <p className="text-gray-400 max-w-2xl mx-auto mb-6">
-            AT1000i, the Auto Trader 1000 Intelligence, by Minith Labs, is a cutting-edge AI / ML algorithmic trading web3 protocol that uses advanced machine learning techniques to identify profitable trading opportunities in the SUI/USDC market. AT1000i uses the 5 minute OHLC candles to generate signals.
+            AT1000i, the Auto Trader 1000 Intelligence, by Minith Labs, is a cutting-edge AI / ML algorithmic trading web3 protocol that uses advanced machine learning techniques to identify profitable trading opportunities in the SUI/USDC market. AT1000i uses 15 minute OHLC candles to generate signals.
           </p>
           <p className="text-red-400 font-medium">
           Capital is at risk. Investors may lose all or part of their investment. Past performance is not a reliable indicator of future results. Investments in unlisted securities are illiquid and may be difficult to realise. This is not a public offer. Only professional investors, certified high net worth individuals or self-certified sophisticated investors should consider investing in AT1000i.
@@ -111,13 +111,12 @@ export default function Home() {
             <h2 className="text-xl font-semibold text-gray-200 mb-4">Trading Strategy Performance</h2>
             <div className="overflow-hidden rounded-xl border border-gray-800">
               <AutoRefreshImage 
-                src="/backtests/strategy_chart-SUI-USD-h3ka.png" 
+                src="/backtests/strategy_chart-SUI-USD-h3ka-15min.png"
                 alt="Strategy Chart" 
                 className="w-full h-auto"
                 style={{ aspectRatio: '16/9', maxWidth: '100%', maxHeight: '100%' }}
               />
             </div>
-            <p className="text-xs text-gray-400">These figures are illustrative only, based on hypothetical assumptions. Past performance is not a reliable indicator of future results. Your capital is at risk and you may lose some or all of your investment.</p>
           </div>
 
 
