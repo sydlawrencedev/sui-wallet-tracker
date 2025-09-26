@@ -353,6 +353,28 @@ export function TransactionList({ address }: TransactionListProps) {
         <div className="mt-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
             <div className="overflow-x-auto">
+
+              <div className="justify-end mt-4" style={{ textAlign: 'left' }}>
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <tr>
+                    <td>Total Trades: {transactions.length}</td>
+
+                    <td>Winning Trades: {transactions.reduce((acc, tx) => tx.pnlPct > 0 ? acc + 1 : acc, 0).toFixed(0)} ({(transactions.reduce((acc, tx) => tx.pnlPct > 0 ? acc + 1 : acc, 0) / transactions.length * 100).toFixed(0)}%)</td>
+
+                    <td>Average Trade: {((transactions.reduce((acc, tx) => tx.pnlPct > 0 ? acc + tx.pnlPct : acc, 0) / transactions.length)).toFixed(2)}%</td>
+                  </tr>
+                  <tr>
+                    <td>Total PnL: ${transactions.reduce((acc, tx) => acc + tx.pnl, 0).toFixed(4)}</td>
+
+                    <td>Trading Fees: ${transactions.reduce((acc, tx) => acc + tx.feesUSD, 0).toFixed(4)}</td>
+
+                    <td>PnL - Trading Fees: ${transactions.reduce((acc, tx) => acc + tx.pnl, 0).toFixed(4) - transactions.reduce((acc, tx) => acc + tx.feesUSD, 0).toFixed(4)}</td>
+                  </tr>
+                </table>
+
+
+              </div>
+
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
@@ -370,13 +392,13 @@ export function TransactionList({ address }: TransactionListProps) {
                     </th>
 
 
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       FEES
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       PnL
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Status
                     </th>
                   </tr>
@@ -425,15 +447,7 @@ export function TransactionList({ address }: TransactionListProps) {
                   ))}
                 </tbody>
               </table>
-              <div className="justify-end mt-4" style={{ textAlign: 'right' }}>
-                <p>Total PnL: ${transactions.reduce((acc, tx) => acc + tx.pnl, 0).toFixed(4)}
-                </p>
 
-                <p>Total Fees: ${transactions.reduce((acc, tx) => acc + tx.feesUSD, 0).toFixed(4)}</p>
-
-                <p>PnL - Fees: ${transactions.reduce((acc, tx) => acc + tx.pnl, 0).toFixed(4) - transactions.reduce((acc, tx) => acc + tx.feesUSD, 0).toFixed(4)}</p>
-
-              </div>
             </div>
           </div>
         </div>

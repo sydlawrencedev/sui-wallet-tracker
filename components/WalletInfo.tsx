@@ -21,22 +21,22 @@ export function WalletInfo({ address, onTotalValueChange }: WalletInfoProps) {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const { tokens, totalValue, totalGBPValue, error } = await getWalletData(address);
-      
+
       if (error) {
         setError(error);
         setTokens([]);
         return;
       }
-      
+
       setTokens(tokens);
       setTotalValue(totalValue);
       setTotalGBPValue(totalGBPValue);
-      
+
       // Notify parent component about the total value change
       if (onTotalValueChange) {
-        onTotalValueChange(totalValue);
+        onTotalValueChange(totalValue, tokens);
       }
     } catch (err) {
       console.error('Error loading wallet data:', err);
@@ -63,7 +63,7 @@ export function WalletInfo({ address, onTotalValueChange }: WalletInfoProps) {
     <div className="p-6 bg-white rounded-lg shadow-md">
       <a href={`https://suiscan.xyz/mainnet/account/${address}`} target="_blank" rel="noopener noreferrer" className="font-medium underline ">View on Explorer</a>
       {error && <div className="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50">{error}</div>}
-      
+
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Portfolio Value</h2>
         <p className="text-2xl font-semibold text-gray-900">{formatCurrency(totalValue, 'USD')}</p>
@@ -79,7 +79,7 @@ export function WalletInfo({ address, onTotalValueChange }: WalletInfoProps) {
             </div>
             <div className="text-right">
               <div className="font-medium">{formatCurrency(token.valueUSD, 'USD')}</div>
-          
+
             </div>
           </div>
         ))}

@@ -9,11 +9,11 @@ interface DateRangePickerProps {
   formatCurrency: (value: number) => string;
 }
 
-export function DateRangePicker({ 
-  dateRange, 
-  setDateRange, 
-  totalProfitLoss, 
-  formatCurrency 
+export function DateRangePicker({
+  dateRange,
+  setDateRange,
+  totalProfitLoss,
+  formatCurrency
 }: DateRangePickerProps) {
   return (
     <div style={{
@@ -22,27 +22,8 @@ export function DateRangePicker({
       gap: '1rem',
       marginBottom: '1.5rem'
     }}>
-      <div style={{ flex: 1 }}>
-        <h2 style={{
-          fontSize: '1.25rem',
-          fontWeight: 600,
-          color: 'var(--text-color)',
-          margin: 0
-        }}>
-          Transaction History
-          {totalProfitLoss !== 0 && (
-            <span style={{
-              marginLeft: '0.75rem',
-              fontSize: '0.875rem',
-              color: totalProfitLoss >= 0 ? 'var(--success-color)' : 'var(--danger-color)',
-              fontWeight: 500
-            }}>
-              {totalProfitLoss > 0 ? '↑' : '↓'} {formatCurrency(Math.abs(totalProfitLoss))} total
-            </span>
-          )}
-        </h2>
-      </div>
-      
+
+
       <div style={{ width: '100%' }}>
         <div style={{
           display: 'flex',

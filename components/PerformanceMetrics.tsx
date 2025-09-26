@@ -277,7 +277,7 @@ function FundsChart({ latestTokenValue, suiPrice }: FundsChartProps) {
   return <Line options={options} data={chartData} />;
 }
 
-export default function PerformanceMetrics({ portfolioValue, suiPrice }: PerformanceMetricsProps) {
+export default function PerformanceMetrics({ portfolioValue, suiPrice, walletIn }: PerformanceMetricsProps) {
   const [metrics, setMetrics] = useState<BacktestResult>({
     initialBalance: 0,
     finalBalance: 0,
@@ -288,6 +288,17 @@ export default function PerformanceMetrics({ portfolioValue, suiPrice }: Perform
   const [tokensInCirculation, setTokensInCirculation] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [walletStatus, setWalletStatus] = useState<number>(0);
+
+
+
+  useEffect(() => {
+    if (walletIn !== undefined) {
+      setWalletStatus(walletIn);
+      setTokensInCirculation(tokensInCirculation);
+
+    }
+  }, [walletIn]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -404,10 +415,11 @@ export default function PerformanceMetrics({ portfolioValue, suiPrice }: Perform
           <h3 className="text-sm font-medium text-gray-400 mb-1">Shares available</h3>
           <p className="text-2xl font-semibold text-blue-400">
             <AnimatedNumber
-              value={1000000 - (tokensInCirculation || 0)}
+              value={1000000 - tokensInCirculation || 0}
+              reverse={true}
               duration={300000}
               className="text-2xl font-semibold inline-block"
-              decimalPlaces={0}
+              decimalPlaces={9}
               showDirectionColor={true}
               currency=""
             />
@@ -422,12 +434,21 @@ export default function PerformanceMetrics({ portfolioValue, suiPrice }: Perform
               value={suiPrice}
               duration={300000}
               className="text-2xl font-semibold inline-block"
-              decimalPlaces={2}
+              decimalPlaces={5}
               showDirectionColor={true}
               currency="USD"
             />
           ) : (
             <p className="text-2xl font-semibold text-blue-400">Loading...</p>
+          )}
+        </div>
+
+        <div className="flex-1 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-4 border border-gray-800">
+          <h3 className="text-sm font-medium text-gray-400 mb-1">Current status</h3>
+          {walletStatus >= 1 ? (
+            <p className="text-2xl font-semibold text-blue-400">In trade</p>
+          ) : (
+            <p className="text-2xl font-semibold text-blue-400">Waiting for buy signal</p>
           )}
         </div>
       </div>

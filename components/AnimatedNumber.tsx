@@ -9,6 +9,7 @@ interface AnimatedNumberProps {
   decimalPlaces?: number;
   showDirectionColor?: boolean;
   currency?: string;
+  reverse?: boolean;
 }
 
 export const AnimatedNumber = (props: AnimatedNumberProps) => {
@@ -18,33 +19,42 @@ export const AnimatedNumber = (props: AnimatedNumberProps) => {
   const startTime = useRef(0);
   const animationFrame = useRef<number>(0);
   const prevValue = useRef(0);
- 
+
   useEffect(() => {
     // If value changes, start a new animation
     if (value !== prevValue.current) {
-      // If current display is 0 and we're animating to a positive number
-      if (displayValue === 0 && value > 0) {
+      if (props.reverse) {
+        // For reverse animation, start from a higher value
+        startValue.current = value * 1.0005; // Start 5% above the target value
+        setDisplayValue(startValue.current);
+        if (value > startValue.current) {
+          duration = 1000;
+        }
+      } else if (displayValue === 0 && value > 0) {
+        // If current display is 0 and we're animating to a positive number
         // Start from 95% of the target value for a quick but smooth animation
         startValue.current = value * 0.999999;
         setDisplayValue(startValue.current);
+        if (value < startValue.current) {
+          duration = 1000;
+        }
       } else {
         startValue.current = displayValue;
+        if (value < startValue.current) {
+          duration = 1000;
+        }
       }
-      
+
       prevValue.current = value;
       startTime.current = performance.now();
-
-      if (value < startValue.current) {
-        duration = 1000;
-      }
 
       const animate = (currentTime: number) => {
         const elapsed = currentTime - startTime.current;
         const progress = Math.min(elapsed / duration, 1);
-        
+
         // Easing function for smoother animation (easeOutQuad)
         const easeProgress = 1 - Math.pow(1 - progress, 3);
-        
+
         const currentValue = startValue.current + (value - startValue.current) * easeProgress;
         setDisplayValue(currentValue);
 
@@ -84,9 +94,12 @@ export const AnimatedNumber = (props: AnimatedNumberProps) => {
   };
 
 
+  // Ensure we don't show negative values
+  const finalValue = Math.max(0, displayValue);
+
   return (
     <span className={className}>
-      {formatNumber(displayValue)}
+      {formatNumber(finalValue)}
     </span>
-  );  
+  );
 };

@@ -24,7 +24,7 @@ const PriceCharts = dynamic(
 );
 
 // Image component with auto-refresh
-function AutoRefreshImage({ src, ...props }: { src: string; [key: string]: any }) {
+function AutoRefreshImage({ src, ...props }: { src: string;[key: string]: any }) {
   const [imgSrc, setImgSrc] = useState(src);
 
   useEffect(() => {
@@ -38,7 +38,7 @@ function AutoRefreshImage({ src, ...props }: { src: string; [key: string]: any }
 
     // Refresh every 1 minute
     const interval = setInterval(updateImage, 1 * 60 * 1000);
-    
+
     // Cleanup interval on unmount
     return () => clearInterval(interval);
   }, [src]);
@@ -52,7 +52,24 @@ const DEFAULT_SUI_ADDRESS = process.env.NEXT_PUBLIC_DEFAULT_SUI_ADDRESS || '';
 export default function Home() {
   const [portfolioValue, setPortfolioValue] = useState<number>(0);
   const [suiPrice, setSuiPrice] = useState<number>(0);
-  
+  const [walletStatus, setWalletStatus] = useState<number>(0);
+
+  let walletChange = function (totalValue, tokens) {
+
+    var inTrade = false;
+    tokens.forEach(token => {
+      if (token.name === "SUI") {
+        if (token.balance * 1 * 10 ** token.decimals > 5) {
+          inTrade = true;
+        }
+      }
+    });
+
+    setWalletStatus(inTrade ? 1 : 0);
+    setPortfolioValue(totalValue);
+    console.log("wallet change", totalValue, tokens)
+  }
+
   // Fetch latest SUI price
   useEffect(() => {
     const fetchSuiPrice = async () => {
@@ -61,12 +78,13 @@ export default function Home() {
         if (response.ok) {
           const data = await response.json();
           setSuiPrice(data.price || 0);
+          setWalletStatus(0)
         }
       } catch (error) {
         console.error('Error fetching SUI price:', error);
       }
     };
-    
+
     fetchSuiPrice();
     // Refresh price every 5 minutes
     const interval = setInterval(fetchSuiPrice, 5 * 60 * 1000);
@@ -84,13 +102,13 @@ export default function Home() {
             AT1000i, the Auto Trader 1000 Intelligence, by Minith Labs, is a cutting-edge AI / ML algorithmic trading web3 protocol that uses advanced machine learning techniques to identify profitable trading opportunities in the SUI/USDC market. AT1000i uses 15 minute OHLC candles to generate signals.
           </p>
           <p className="text-red-400 font-medium">
-          Capital is at risk. Investors may lose all or part of their investment. Past performance is not a reliable indicator of future results. Investments in unlisted securities are illiquid and may be difficult to realise. This is not a public offer. Only professional investors, certified high net worth individuals or self-certified sophisticated investors should consider investing in AT1000i.
-        </p>
-        <p><a href={"https://suiscan.xyz/mainnet/account/"+DEFAULT_SUI_ADDRESS} target="_blank">View on SuiScan</a></p>
+            Capital is at risk. Investors may lose all or part of their investment. Past performance is not a reliable indicator of future results. Investments in unlisted securities are illiquid and may be difficult to realise. This is not a public offer. Only professional investors, certified high net worth individuals or self-certified sophisticated investors should consider investing in AT1000i.
+          </p>
+          <p><a href={"https://suiscan.xyz/mainnet/account/" + DEFAULT_SUI_ADDRESS} target="_blank">View on SuiScan</a></p>
 
           <div className="flex space-x-6">
-            <Link 
-              href="/how" 
+            <Link
+              href="/how"
               className="px-4 py-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-lg hover:opacity-90 transition-opacity"
             >
               How to invest
@@ -100,19 +118,19 @@ export default function Home() {
 
         <div className="space-y-8">
 
-          <PerformanceMetrics portfolioValue={portfolioValue} suiPrice={suiPrice} />
+          <PerformanceMetrics portfolioValue={portfolioValue} suiPrice={suiPrice} walletIn={walletStatus} />
 
 
 
-      
+
 
           {/* Main Chart */}
           <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 border border-gray-800 shadow-2xl">
             <h2 className="text-xl font-semibold text-gray-200 mb-4">Trading Strategy Performance</h2>
             <div className="overflow-hidden rounded-xl border border-gray-800">
-              <AutoRefreshImage 
-                src="/backtests/strategy_chart-SUI-USD-h3ka-15min.png"
-                alt="Strategy Chart" 
+              <AutoRefreshImage
+                src="/backtests/strategy_chart-SUI-USD-h3ka1-1min.png"
+                alt="Strategy Chart"
                 className="w-full h-auto"
                 style={{ aspectRatio: '16/9', maxWidth: '100%', maxHeight: '100%' }}
               />
@@ -133,13 +151,13 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 border border-gray-800 shadow-xl">
               <h2 className="text-xl font-semibold text-gray-200 mb-6">Wallet Overview</h2>
-              <WalletInfo 
-                address={DEFAULT_SUI_ADDRESS} 
-                onTotalValueChange={setPortfolioValue} 
+              <WalletInfo
+                address={DEFAULT_SUI_ADDRESS}
+                onTotalValueChange={walletChange}
               />
             </div>
-            
-            
+
+
           </div>
         </div>
       </div>

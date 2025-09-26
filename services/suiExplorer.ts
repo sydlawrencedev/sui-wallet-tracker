@@ -271,8 +271,8 @@ export interface TokenBalance {
 }
 
 // Cache for token prices to avoid redundant API calls
-const tokenPriceCache: Record<string, { priceUSD: number; timestamp: number }> = {};
-const PRICE_CACHE_DURATION_MS = 1 * 60 * 1000; // 5 minutes
+export const tokenPriceCache: Record<string, { priceUSD: number; timestamp: number }> = {};
+export const PRICE_CACHE_DURATION_MS = 1 * 60 * 1000; // 5 minutes
 
 // Default prices to use when API is rate limited or no cache is available
 const DEFAULT_PRICES: Record<string, number> = {
@@ -433,6 +433,11 @@ export async function fetchWalletBalances(address: string): Promise<TokenBalance
           coinType.includes('0xdeeb7a4662eec9f2f3def03fb937a663dddaa2e215b8078a284d026b7946c270::deep::DEEP')) {
           symbol = 'DEEP';
           decimals = 6;
+        }
+        // Handle AT1000i token
+        else if (coinType.endsWith('::AT1000i_ALPHA::AT1000I_ALPHA')) {
+          symbol = 'AT1000i';
+          decimals = 9;
         } else {
           console.log(`[fetchWalletBalances] Unknown token type: ${coinType}`);
         }
@@ -446,7 +451,7 @@ export async function fetchWalletBalances(address: string): Promise<TokenBalance
         const numericBalance = Number(balanceValue) / (10 ** decimals);
 
         try {
-          // Get token price in USD
+          // Get token price
           const priceUSD = await getTokenPrice(symbol);
 
           // Handle zero balance case

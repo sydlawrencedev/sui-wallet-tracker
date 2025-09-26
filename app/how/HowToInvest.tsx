@@ -114,7 +114,7 @@ export default function HowToInvest() {
           By sending your funds to AT1000i, you are agreeing to the terms of this communication.
         </p>
 
-        <p>This website is intended solely for professional investors, high net worth individuals and self-certified sophisticated investors as defined under the Financial Services and Markets Act 2000 (Financial Promotion) Order 2005. The fund is not authorised or regulated by the FCA.</p>
+        <p>This investment fund is intended solely for professional investors, high net worth individuals and self-certified sophisticated investors as defined under the Financial Services and Markets Act 2000 (Financial Promotion) Order 2005. The fund is not authorised or regulated by the FCA.</p>
 
 
         <h3>For professional investors only</h3>

@@ -42,12 +42,12 @@ const deepbookClient = new DeepBookClient({
 
 // Function to get pool ID for a specific asset pair
 async function getPoolId(
-  PACKAGE: string,
-  COIN1: string,
-  COIN2: string,
-  REGISTRY: string
+    PACKAGE: string,
+    COIN1: string,
+    COIN2: string,
+    REGISTRY: string
 ): Promise<string> {
-     // Create a new transaction to interact with DeepBook
+    // Create a new transaction to interact with DeepBook
     const get_pool_tx = new Transaction()
 
     // Prepare the Move call to get pool ID for SUI/USDC pair
@@ -139,7 +139,7 @@ async function transact(
         tx.setSender(keypair.getPublicKey().toSuiAddress());
 
         console.log('Building and executing transaction...');
-        
+
         // Sign and execute the transaction
         const result = await client.signAndExecuteTransaction({
             transaction: tx,
@@ -155,6 +155,7 @@ async function transact(
             return result;
         } else {
             console.error('❌ Swap failed:', result.effects?.status?.error);
+            console.error(result);
             return result;
         }
 
@@ -183,7 +184,7 @@ async function swapUSDCForSUI(
 
         // Create a new transaction
         const tx = new Transaction();
-        
+
         // what can I do here, instead of swap? can I place an order?
         const [baseOut, quoteOut, deepOut] = deepbookClient.deepBook.swapExactQuoteForBase({
             poolKey: 'SUI_USDC',
@@ -217,7 +218,7 @@ async function swapSUIForUSDC(
         })(tx as any);
 
         var success = await transact(tx, baseOut, quoteOut, deepOut);
-       return success;
+        return success;
         // No explicit return needed as the function is declared to return void
     } catch (error) {
         console.error('❌ Error executing swap:');
@@ -226,67 +227,67 @@ async function swapSUIForUSDC(
 
 export async function POST(request: Request, { params }: { params: { token: string } }) {
 
-  if (!SUI_PRIVATE_KEY) {
-    return NextResponse.json({ error: 'SUI_PRIVATE_KEY is not set on the server.' }, { status: 500 });
-  }
-
-  try {
-    
-    const { amount, token } = await request.json();
-    if (token == "USDC") {
-      // Get the USDC coin to swap
-      const balance = await client.getBalance({
-        owner: keypair.toSuiAddress(),
-        coinType: USDC_COIN_TYPE,
-      });
-      
-      const amountIn = Number(balance.totalBalance) / 1000000   
-      
-      if (amountIn < 5) {
-        console.log("not enough USDC " + amountIn);
-        return NextResponse.json({ error: 'No USDC found in wallet' }, { status: 400 });
-      }
-      
-      // const swap_result = await swapSUIForUSDC(1, 0.1);
-      const result = await swapUSDCForSUI(Number(amountIn), 0.1) as any;
-
-      return NextResponse.json({ 
-        success: true,
-        digest: result.digest,
-        events: result.events,
-        effects: result.effects
-      });
+    if (!SUI_PRIVATE_KEY) {
+        return NextResponse.json({ error: 'SUI_PRIVATE_KEY is not set on the server.' }, { status: 500 });
     }
 
-    if (token == "SUI") {
-      // Get the USDC coin to swap
-      const balance = await client.getBalance({
-        owner: keypair.toSuiAddress(),
-        coinType: SUI_COIN_TYPE,
-      });
+    try {
 
-      const amountIn = Number(balance.totalBalance) / 1000000000 - MINIMUM_SUI_LEFT_IN_WALLET  
-      
-      if (amountIn < 2) {
-        console.log("not enough SUI");
-        return NextResponse.json({ error: 'No SUI found in wallet' }, { status: 400 });
-      }
-      
-      // const swap_result = await swapSUIForUSDC(1, 0.1);
-      const result = await swapSUIForUSDC(Number(amountIn), 0.1) as any;
+        const { amount, token } = await request.json();
+        if (token == "USDC") {
+            // Get the USDC coin to swap
+            const balance = await client.getBalance({
+                owner: keypair.toSuiAddress(),
+                coinType: USDC_COIN_TYPE,
+            });
 
-      return NextResponse.json({ 
-        success: true,
-        digest: result.digest,
-        events: result.events,
-        effects: result.effects
-      });
+            const amountIn = Number(balance.totalBalance) / 1000000
+
+            if (amountIn < 5) {
+                console.log("not enough USDC " + amountIn);
+                return NextResponse.json({ error: 'No USDC found in wallet' }, { status: 400 });
+            }
+
+            // const swap_result = await swapSUIForUSDC(1, 0.1);
+            const result = await swapUSDCForSUI(Number(amountIn), 0.1) as any;
+
+            return NextResponse.json({
+                success: true,
+                digest: result.digest,
+                events: result.events,
+                effects: result.effects
+            });
+        }
+
+        if (token == "SUI") {
+            // Get the USDC coin to swap
+            const balance = await client.getBalance({
+                owner: keypair.toSuiAddress(),
+                coinType: SUI_COIN_TYPE,
+            });
+
+            const amountIn = Number(balance.totalBalance) / 1000000000 - MINIMUM_SUI_LEFT_IN_WALLET
+
+            if (amountIn < 2) {
+                console.log("not enough SUI");
+                return NextResponse.json({ error: 'No SUI found in wallet' }, { status: 400 });
+            }
+
+            // const swap_result = await swapSUIForUSDC(1, 0.1);
+            const result = await swapSUIForUSDC(Number(amountIn), 0.1) as any;
+
+            return NextResponse.json({
+                success: true,
+                digest: result.digest,
+                events: result.events,
+                effects: result.effects
+            });
+        }
+
+    } catch (error) {
+        console.error('Swap error:', error);
+        return NextResponse.json(
+            { error: error instanceof Error ? error.message : 'Failed to execute swap' },
+        );
     }
-    
-  } catch (error) {
-    console.error('Swap error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to execute swap' },
-    );
-  }
 }

@@ -15,17 +15,18 @@ export async function getWalletData(address: string) {
 
 export async function getServerSideWalletData(address: string) {
   const { fetchWalletBalances } = await import('../services/suiExplorer');
-  
+
   try {
+
     const balances = await fetchWalletBalances(address);
-    
+
     if (balances.length === 0) {
       return { tokens: [], totalValue: 0, totalGBPValue: 0, error: 'No token balances found for this wallet' };
     }
-    
+
     const totalValue = balances.reduce((sum, token) => sum + token.valueUSD, 0);
     const totalGBPValue = balances.reduce((sum, token) => sum + token.valueGBP, 0);
-    
+
     return { tokens: balances, totalValue, totalGBPValue, error: null };
   } catch (err) {
     console.error('Error in getServerSideWalletData:', err);
