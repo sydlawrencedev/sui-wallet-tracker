@@ -5,7 +5,7 @@ import { copyToClipboard } from '../../utils/copyToClipboard';
 
 export default function HowToInvest() {
   const [copied, setCopied] = useState(false);
-  const walletAddress = '0xe39d3415072c78f6734135dd6faa1d0d0b62a1a378701a26dc8d38b9e96b85b2';
+  const walletAddress = '0xbcae8fa928ed6606f78c8d0aead213d6e76d29041337dff3b9448e953e79fb39';
 
   const handleCopy = () => {
     copyToClipboard(walletAddress);
@@ -31,7 +31,7 @@ export default function HowToInvest() {
         </p>
 
         <p className="mt-4">
-          Only professional investors, certified high net worth individuals or self-certified sophisticated investors should consider investing in AT1000i.
+          Only professional investors, certified high net worth individuals or self-certified sophisticated investors should consider investing in AT3000i.
         </p>
       </div>
 
@@ -71,7 +71,7 @@ export default function HowToInvest() {
         <div className="mb-6">
           <h3 className="text-xl font-medium text-gray-300 mt-6 mb-3">Deposit your funds</h3>
           <p>
-            Once you've received it in your wallet. Send it to the address of AT1000i:
+            Once you've received it in your wallet. Send it to the address of AT3000i:
           </p>
           <div className="relative">
             <div className="bg-gray-800 p-3 pr-16 rounded-lg mt-2 break-all font-mono">
@@ -86,7 +86,7 @@ export default function HowToInvest() {
             </button>
           </div>
           <p><a
-            href="https://suiscan.xyz/mainnet/account/0xe39d3415072c78f6734135dd6faa1d0d0b62a1a378701a26dc8d38b9e96b85b2"
+            href={`https://suiscan.xyz/mainnet/account/${walletAddress}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-400 hover:text-blue-300 underline inline-block mt-2"
@@ -96,14 +96,14 @@ export default function HowToInvest() {
         </div>
 
         <div className="mb-6">
-          <h3 className="text-xl font-medium text-gray-300 mt-6 mb-3">Receive your AT1000i token</h3>
+          <h3 className="text-xl font-medium text-gray-300 mt-6 mb-3">Receive your AT3000i token</h3>
           <p>
-            In the future you will receive an AT1000i token which will be your share of the investment.
+            In the future you will receive an AT3000i token which will be your share of the investment.
             To sell your investment, you will be able to send the token back to the wallet to receive your funds.
           </p>
           <h3 className="text-xl font-medium text-gray-300 mt-6 mb-3">Sell your shares</h3>
           <p>
-            To sell your shares, you will need to send the AT1000i token back to the AT1000i wallet. The wallet will then return your funds as USDC, 48 hours later.
+            To sell your shares, you will need to send the AT3000i token back to the AT3000i wallet. The wallet will then return your funds as USDC, 48 hours later.
           </p>
         </div>
       </div>
@@ -111,7 +111,7 @@ export default function HowToInvest() {
       <div className="mt-12 pt-6 border-t border-gray-700">
         <h2 className="text-2xl font-semibold text-white mb-4">Legal</h2>
         <p>
-          By sending your funds to AT1000i, you are agreeing to the terms of this communication.
+          By sending your funds to AT3000i, you are agreeing to the terms of this communication.
         </p>
 
         <p>This investment fund is intended solely for professional investors, high net worth individuals and self-certified sophisticated investors as defined under the Financial Services and Markets Act 2000 (Financial Promotion) Order 2005. The fund is not authorised or regulated by the FCA.</p>
@@ -149,7 +149,7 @@ export default function HowToInvest() {
         </p>
 
         <p className="mt-2">
-          On days where there is a profit, 20% of the profit will be sent from the wallet to the Minith Labs wallet in the form of AT1000i tokens, as management fees. Minith Labs may decide to leave the tokens in the main AT1000i wallet, and extract them at a later date. The fund will cover any transaction fees.
+          On days where there is a profit, 20% of the profit will be sent from the wallet to the <a href="https://suiscan.xyz/mainnet/account/0x18874fc31b336b792d0634ba853fde8767652bbc933d87d5c2476c172593feb8" target="_blank">Minith Labs wallet</a> in the form of AT1000i tokens, as management fees. Minith Labs may decide to leave the tokens in the main AT1000i wallet, and extract them at a later date. The fund will cover any transaction fees.
         </p>
 
         <p className="mt-2">

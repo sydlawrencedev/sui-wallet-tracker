@@ -57,7 +57,7 @@ interface TransactionListProps {
 export function TransactionList({ address }: TransactionListProps) {
   const currentYear = new Date().getFullYear();
   const [dateRange, setDateRange] = useState({
-    start: new Date(currentYear, 0, 1), // January 1st of current year
+    start: new Date(2025, 8, 26), // first trade was 26th september
     end: new Date(),
   });
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -99,49 +99,63 @@ export function TransactionList({ address }: TransactionListProps) {
   const groupTrades = (txs: any[]): Trade[] => {
     var trades = [];
     txs.forEach((tx: any) => {
-      if (tx.transactions.length > 0 && tx.transactions[0].module === "pool") {
-        if (trades[trades.length - 1] !== undefined && trades[trades.length - 1].status === "open") {
-          trades[trades.length - 1].buyTxs.push(tx);
-          trades[trades.length - 1].status = "closed";
-          trades[trades.length - 1].entry = tx.transactions[0].timestamp;
-          trades[trades.length - 1].entryPrice = tx.balanceChanges['USDC'] / tx.balanceChanges['SUI'] * 1000 * -1;
 
-          trades[trades.length - 1].fees += Math.abs(tx.balanceChanges['DEEP'] * 1) * 1;
-          const deepFX = getDeepPriceForDate(new Date(tx.transactions[0].timestamp));
-          console.log("currency: ", deepFX)
-          if (deepFX !== null) {
-            trades[trades.length - 1].feesUSD = (trades[trades.length - 1].fees * deepFX) / 1000000;
+      if (trades.length === 0 && tx.balanceChanges['USDC'] < 0) {
+        trades.push({
+          id: tx.transactions[0].id,
+          fees: Math.abs(tx.balanceChanges['DEEP'] * 1) * 1,
+          pnl: 0,
+          buyTxs: [tx],
+          sellTxs: [tx],
+          status: "open"
+        });
+        console.log("new trade", trades);
+      }
+      else {
+        if (tx.transactions.length > 0 && tx.transactions[0].module === "pool") {
+          if (trades[trades.length - 1] !== undefined && trades[trades.length - 1].status === "open") {
+            trades[trades.length - 1].buyTxs.push(tx);
+            trades[trades.length - 1].status = "closed";
+            trades[trades.length - 1].entry = tx.transactions[0].timestamp;
+            trades[trades.length - 1].entryPrice = tx.balanceChanges['USDC'] / tx.balanceChanges['SUI'] * 1000 * -1;
+
+            trades[trades.length - 1].fees += Math.abs(tx.balanceChanges['DEEP'] * 1) * 1;
+            const deepFX = getDeepPriceForDate(new Date(tx.transactions[0].timestamp));
+            console.log("currency: ", deepFX)
+            if (deepFX !== null) {
+              trades[trades.length - 1].feesUSD = (trades[trades.length - 1].fees * deepFX) / 1000000;
+            }
+
+
+            trades[trades.length - 1].sui += tx.balanceChanges['SUI'] * 1;
+            trades[trades.length - 1].pnlPct = (trades[trades.length - 1].entryPrice - trades[trades.length - 1].exitPrice) / trades[trades.length - 1].entryPrice * -100;
+
+            trades[trades.length - 1].pnl = (tx.balanceChanges['USDC'] * 1 + trades[trades.length - 1].usdc * 1) * 1 / 1000000;
+            trades[trades.length - 1].usdc = tx.balanceChanges['USDC'] * 1;
+
+          } else {
+            trades.push({
+              id: tx.transactions[0].id,
+              exit: tx.transactions[0].timestamp,
+              entry: 0,
+              entryPrice: 0,
+              exitPrice: tx.balanceChanges['USDC'] / tx.balanceChanges['SUI'] * 1000 * -1,
+              fees: Math.abs(tx.balanceChanges['DEEP'] * 1) * 1,
+              pnl: 0,
+              pnlPct: 0,
+              feesUSD: 0,
+              sui: tx.balanceChanges['SUI'] * 1,
+              usdc: tx.balanceChanges['USDC'] * 1,
+              sellTxs: [tx],
+              buyTxs: [],
+              status: "open"
+            });
+
+
           }
-
-
-          trades[trades.length - 1].sui += tx.balanceChanges['SUI'] * 1;
-          trades[trades.length - 1].pnlPct = (trades[trades.length - 1].entryPrice - trades[trades.length - 1].exitPrice) / trades[trades.length - 1].entryPrice * -100;
-
-          trades[trades.length - 1].pnl = (tx.balanceChanges['USDC'] * 1 + trades[trades.length - 1].usdc * 1) * 1 / 1000000;
-          trades[trades.length - 1].usdc = tx.balanceChanges['USDC'] * 1;
-
         } else {
-          trades.push({
-            id: tx.transactions[0].id,
-            exit: tx.transactions[0].timestamp,
-            entry: 0,
-            entryPrice: 0,
-            exitPrice: tx.balanceChanges['USDC'] / tx.balanceChanges['SUI'] * 1000 * -1,
-            fees: Math.abs(tx.balanceChanges['DEEP'] * 1) * 1,
-            pnl: 0,
-            pnlPct: 0,
-            feesUSD: 0,
-            sui: tx.balanceChanges['SUI'] * 1,
-            usdc: tx.balanceChanges['USDC'] * 1,
-            sellTxs: [tx],
-            buyTxs: [],
-            status: "open"
-          });
-
-
+          console.log('not pool', tx)
         }
-      } else {
-        console.log('not pool', tx)
       }
     });
 
@@ -205,10 +219,15 @@ export function TransactionList({ address }: TransactionListProps) {
       console.log(`Number of sorted transactions: ${sortedTransactions.length}`)
 
       const trades = groupTrades(sortedTransactions);
+      const filteredTrades = trades.filter((trade) => trade.entry >= startTime && trade.entry <= endTime);
 
       console.log(`Number of trades: ${trades.length}`)
 
-      setTransactions(trades);
+      // filter trades base on dateRange and trade.entry
+
+
+
+      setTransactions(filteredTrades);
 
 
     } catch (err) {
@@ -333,6 +352,10 @@ export function TransactionList({ address }: TransactionListProps) {
     return tx.type === 'receive' ? 'Received' : 'Sent';
   };
 
+  const getBuyIn = (tx: Transaction) => {
+    return tx.buyTxs[0].balanceChanges['USDC'] / 1000000 * -1;
+  }
+
   return (
     <div className="mt-8">
       <DateRangePicker
@@ -361,14 +384,28 @@ export function TransactionList({ address }: TransactionListProps) {
 
                     <td>Winning Trades: {transactions.reduce((acc, tx) => tx.pnlPct > 0 ? acc + 1 : acc, 0).toFixed(0)} ({(transactions.reduce((acc, tx) => tx.pnlPct > 0 ? acc + 1 : acc, 0) / transactions.length * 100).toFixed(0)}%)</td>
 
-                    <td>Average Trade: {((transactions.reduce((acc, tx) => tx.pnlPct > 0 ? acc + tx.pnlPct : acc, 0) / transactions.length)).toFixed(2)}%</td>
+                    <td>Average Trade:
+                      <span style={{ color: transactions.reduce((acc, tx) => (tx.exitPrice) ? acc + tx.pnlPct : 0, 0) > 0 ? 'green' : 'red' }}>
+                        {transactions.reduce((acc, tx) => (tx.exitPrice) ? acc + tx.pnlPct : 0, 0) > 0 ? '+' : ''}{((transactions.reduce((acc, tx) => (tx.exitPrice) ? acc + tx.pnlPct : 0, 0) / transactions.length)).toFixed(2)}%
+                      </span>
+                    </td>
                   </tr>
                   <tr>
-                    <td>Total PnL: ${transactions.reduce((acc, tx) => acc + tx.pnl, 0).toFixed(4)}</td>
+                    <td>Total PnL: $
+                      <span style={{ color: transactions.reduce((acc, tx) => (tx.exitPrice) ? acc + tx.pnl : 0, 0) > 0 ? 'green' : 'red' }}>
+                        {transactions.reduce((acc, tx) => (tx.exitPrice) ? acc + tx.pnl : 0, 0).toFixed(4)}
 
-                    <td>Trading Fees: ${transactions.reduce((acc, tx) => acc + tx.feesUSD, 0).toFixed(4)}</td>
+                      </span>
+                    </td>
 
-                    <td>PnL - Trading Fees: ${transactions.reduce((acc, tx) => acc + tx.pnl, 0).toFixed(4) - transactions.reduce((acc, tx) => acc + tx.feesUSD, 0).toFixed(4)}</td>
+                    <td>Trading Fees: ${transactions.reduce((acc, tx) => (tx.exitPrice) ? acc + tx.feesUSD : 0, 0).toFixed(4)}</td>
+
+                    <td>
+                      PnL - Trading Fees:
+                      <span style={{ color: transactions.reduce((acc, tx) => acc + tx.pnlPct, 0) - transactions.reduce((acc, tx) => acc + tx.feesUSD, 0) > 0 ? 'green' : 'red' }}>
+                        ${(transactions.reduce((acc, tx) => (tx.exitPrice) ? acc + tx.pnl : 0, 0) - transactions.reduce((acc, tx) => (tx.exitPrice) ? acc + tx.feesUSD : 0, 0)).toFixed(4)}
+                      </span>
+                    </td>
                   </tr>
                 </table>
 
@@ -393,9 +430,6 @@ export function TransactionList({ address }: TransactionListProps) {
 
 
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      FEES
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       PnL
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -419,26 +453,26 @@ export function TransactionList({ address }: TransactionListProps) {
                       </td>
 
                       <td>
-                        <a href={`https://suiscan.xyz/mainnet/tx/${txs.sellTxs[0].transactions[0].id}`} target="_blank">
-                          {formatDate(txs.exit)}
-                        </a>
+                        {typeof txs.exit === 'number' ? (
+                          <a href={`https://suiscan.xyz/mainnet/tx/${txs.sellTxs[0].transactions[0].id}`} target="_blank">
+                            {formatDate(txs.exit)}
+                          </a>
+                        ) : ''}
                       </td>
                       <td>
-                        {txs.exitPrice.toFixed(4)}
+                        {(txs.exitPrice) ? txs.exitPrice.toFixed(4) : ''}
                       </td>
 
 
-                      <td>
 
-                        ${txs.feesUSD.toFixed(4)}
-                      </td>
                       <td>
                         <span style={{ color: txs.pnlPct >= 0 ? 'green' : 'red' }}>
-                          {txs.pnlPct.toFixed(2)}%
+
+                          {(txs.exitPrice) ? txs.pnlPct.toFixed(2) + '%' : ''}
                         </span>
                       </td>
                       <td>
-                        {txs.status}
+                        {(txs.exitPrice) ? 'Closed' : 'Open'}
 
                       </td>
 

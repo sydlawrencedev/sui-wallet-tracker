@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { AnimatedNumber } from './AnimatedNumber';
 import { Line } from 'react-chartjs-2';
+import { getWalletData, formatBalance } from '../lib/walletData';
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -46,6 +48,7 @@ interface BacktestResult {
 interface PerformanceMetricsProps {
   portfolioValue?: number;
   suiPrice?: number;
+  address: string;
 }
 
 // Separate component for the funds chart
@@ -277,7 +280,7 @@ function FundsChart({ latestTokenValue, suiPrice }: FundsChartProps) {
   return <Line options={options} data={chartData} />;
 }
 
-export default function PerformanceMetrics({ portfolioValue, suiPrice, walletIn }: PerformanceMetricsProps) {
+export default function PerformanceMetrics({ address, portfolioValue, suiPrice, walletIn }: PerformanceMetricsProps) {
   const [metrics, setMetrics] = useState<BacktestResult>({
     initialBalance: 0,
     finalBalance: 0,
@@ -290,9 +293,35 @@ export default function PerformanceMetrics({ portfolioValue, suiPrice, walletIn 
   const [error, setError] = useState<string | null>(null);
   const [walletStatus, setWalletStatus] = useState<number>(0);
 
+  const loadWalletData = useCallback(async () => {
+    try {
 
+      const { tokens, totalValue, totalGBPValue, error } = await getWalletData(address);
+      console.log(tokens);
+      tokens.forEach(token => {
+        if (token.symbol === "USDC") {
+          if (token.balance / 1000000 < 10) {
+            setWalletStatus(1);
+          }
+        }
+      });
+
+
+      if (error) {
+        setError(error);
+        return;
+      }
+
+    } catch (err) {
+      console.error('Error loading wallet data:', err);
+      setError('Failed to load wallet data. Please try again later.');
+    }
+  }, [address]);
 
   useEffect(() => {
+
+    loadWalletData();
+
     if (walletIn !== undefined) {
       setWalletStatus(walletIn);
       setTokensInCirculation(tokensInCirculation);
@@ -442,11 +471,10 @@ export default function PerformanceMetrics({ portfolioValue, suiPrice, walletIn 
             <p className="text-2xl font-semibold text-blue-400">Loading...</p>
           )}
         </div>
-
-        <div className="flex-1 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-4 border border-gray-800">
+        <div className="flex-1 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-4 border border-gray-800" style={{ backgroundColor: walletStatus >= 1 ? '#0E7C7B' : '#D62246' }}>
           <h3 className="text-sm font-medium text-gray-400 mb-1">Current status</h3>
           {walletStatus >= 1 ? (
-            <p className="text-2xl font-semibold text-blue-400">In trade</p>
+            <p className="text-2xl font-semibold text-blue-400">Active in trade</p>
           ) : (
             <p className="text-2xl font-semibold text-blue-400">Waiting for buy signal</p>
           )}

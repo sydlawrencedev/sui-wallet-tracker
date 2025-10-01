@@ -95,14 +95,12 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header with gradient text */}
         <header className="mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 mb-4">
-            AT1000i &alpha; Investment Fund
-          </h1>
+
           <p className="text-gray-400 max-w-2xl mx-auto mb-6">
-            AT1000i, the Auto Trader 1000 Intelligence, by Minith Labs, is a cutting-edge AI / ML algorithmic trading web3 protocol that uses advanced machine learning techniques to identify profitable trading opportunities in the SUI/USDC market. AT1000i uses 15 minute OHLC candles to generate signals.
+            AT3000i, the Auto Trader 3000 Intelligence by Minith Labs, is a next-generation algorithmic trading protocol built for Web3 markets. It leverages state-of-the-art machine learning architectures, ranging from deep reinforcement learning to ensemble predictive modelling, to dynamically detect and exploit alpha in the SUI/USDC trading pair. The system continuously ingests high-frequency market data, on-chain liquidity flows, and cross-exchange order book dynamics, optimising execution through adaptive risk-adjusted strategies and low-latency smart contract integration.
           </p>
           <p className="text-red-400 font-medium">
-            Capital is at risk. Investors may lose all or part of their investment. Past performance is not a reliable indicator of future results. Investments in unlisted securities are illiquid and may be difficult to realise. This is not a public offer. Only professional investors, certified high net worth individuals or self-certified sophisticated investors should consider investing in AT1000i.
+            Capital is at risk. Investors may lose all or part of their investment. Past performance is not a reliable indicator of future results. Investments in unlisted securities are illiquid and may be difficult to realise. This is not a public offer. Only professional investors, certified high net worth individuals or self-certified sophisticated investors should consider investing in AT3000i.
           </p>
           <p><a href={"https://suiscan.xyz/mainnet/account/" + DEFAULT_SUI_ADDRESS} target="_blank">View on SuiScan</a></p>
 
@@ -118,7 +116,7 @@ export default function Home() {
 
         <div className="space-y-8">
 
-          <PerformanceMetrics portfolioValue={portfolioValue} suiPrice={suiPrice} walletIn={walletStatus} />
+          <PerformanceMetrics address={DEFAULT_SUI_ADDRESS} portfolioValue={portfolioValue} suiPrice={suiPrice} walletIn={walletStatus} />
 
 
 
