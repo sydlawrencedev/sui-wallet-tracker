@@ -7,8 +7,8 @@ import { Navbar } from '@/components/Navbar';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'SUI AT1000i',
-  description: 'Track SUI wallet transactions with GBP values and profit/loss',
+  title: 'AT3000i - Auto Trader 3000 Intelligence',
+  description: 'The Auto Trader 3000 Intelligence by Minith Labs, is a next-generation algorithmic trading protocol built for Web3 markets.',
 };
 
 export default function RootLayout({

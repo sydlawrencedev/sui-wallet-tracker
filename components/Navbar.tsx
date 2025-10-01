@@ -19,7 +19,7 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <h1 className="text-xl font-bold text-white">AT1000i α</h1>
+              <h1 className="text-xl font-bold text-white">AT3000i α</h1>
             </div>
             <div className="md:block">
               <div className="ml-10 flex items-baseline space-x-4">

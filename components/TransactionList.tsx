@@ -380,6 +380,8 @@ export function TransactionList({ address }: TransactionListProps) {
               <div className="justify-end mt-4" style={{ textAlign: 'left' }}>
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                   <tr>
+                    <td>Total Trading volume: ${Math.round(transactions.reduce((acc, tx) => (tx.usdc) ? acc + tx.usdc * -1 : acc, 0) / 1000000 * 2).toLocaleString()}</td>
+
                     <td>Total Trades: {transactions.length}</td>
 
                     <td>Winning Trades: {transactions.reduce((acc, tx) => tx.pnlPct > 0 ? acc + 1 : acc, 0).toFixed(0)} ({(transactions.reduce((acc, tx) => tx.pnlPct > 0 ? acc + 1 : acc, 0) / transactions.length * 100).toFixed(0)}%)</td>
@@ -402,10 +404,18 @@ export function TransactionList({ address }: TransactionListProps) {
 
                     <td>
                       PnL - Trading Fees:
-                      <span style={{ color: transactions.reduce((acc, tx) => acc + tx.pnlPct, 0) - transactions.reduce((acc, tx) => acc + tx.feesUSD, 0) > 0 ? 'green' : 'red' }}>
+                      <span style={{ color: transactions.reduce((acc, tx) => acc + tx.pnl, 0) - transactions.reduce((acc, tx) => acc + tx.feesUSD, 0) > 0 ? 'green' : 'red' }}>
                         ${(transactions.reduce((acc, tx) => (tx.exitPrice) ? acc + tx.pnl : 0, 0) - transactions.reduce((acc, tx) => (tx.exitPrice) ? acc + tx.feesUSD : 0, 0)).toFixed(4)}
                       </span>
                     </td>
+
+                    <td>
+                      Compounded:
+                      <span style={{ color: transactions.reduce((acc, tx) => acc + tx.pnl, 0) - transactions.reduce((acc, tx) => acc + tx.feesUSD, 0) > 0 ? 'green' : 'red' }}>
+                        {(transactions.reverse().reduce((acc, tx) => (tx.exitPrice) ? acc * (1 + tx.pnlPct / 100) : acc, 1)).toFixed(2)}%
+                      </span>
+                    </td>
+
                   </tr>
                 </table>
 

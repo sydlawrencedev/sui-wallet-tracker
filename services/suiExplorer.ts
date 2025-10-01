@@ -128,45 +128,6 @@ interface SuiTransaction {
   }>;
 }
 
-export async function getGasFees(
-  txDigest: string,
-  cb: Function,
-): Promise<{ data: SuiTransaction[]; nextCursor: string | null }> {
-  console.log('Fetching transaction fees for address:', txDigest);
-  const query = {
-    "jsonrpc": "2.0",
-    "id": 1,
-    "method": "sui_getTransactionBlock",
-    "params": [
-      {
-        "digest": txDigest
-      }
-    ]
-  };
-
-  try {
-    const response = await fetch('https://fullnode.mainnet.sui.io:443', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(query),
-    });
-
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch transactions: ${response.statusText}`);
-    } else {
-      const responseData = await response.json();
-
-      cb(responseData);
-    }
-  } catch (error) {
-    console.error('Error fetching transactions:', error);
-    return cb({ data: [], nextCursor: null });
-  }
-}
-
 export async function fetchWalletTransactions(
   address: string,
   cursor: string | null = null,

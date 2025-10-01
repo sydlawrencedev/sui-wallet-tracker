@@ -80,9 +80,9 @@ const chartOptions: ChartOptions<'line'> = {
           }
           if (context.parsed.y !== null) {
             if (label.includes('GBP')) {
-              label += new Intl.NumberFormat('en-GB', { 
-                style: 'currency', 
-                currency: 'GBP' 
+              label += new Intl.NumberFormat('en-GB', {
+                style: 'currency',
+                currency: 'GBP'
               }).format(context.parsed.y);
             }
           }
@@ -115,11 +115,11 @@ const chartOptions: ChartOptions<'line'> = {
       },
       ticks: {
         color: '#9CA3AF',
-        callback: (value: string | number) => 
-          new Intl.NumberFormat('en-US', { 
-            style: 'currency', 
+        callback: (value: string | number) =>
+          new Intl.NumberFormat('en-US', {
+            style: 'currency',
             currency: 'USD',
-            maximumFractionDigits: 4 
+            maximumFractionDigits: 4
           }).format(Number(value)),
       },
       border: {
@@ -135,11 +135,11 @@ const chartOptions: ChartOptions<'line'> = {
       },
       ticks: {
         color: '#9CA3AF',
-        callback: (value: string | number) => 
-          new Intl.NumberFormat('en-GB', { 
-            style: 'currency', 
+        callback: (value: string | number) =>
+          new Intl.NumberFormat('en-GB', {
+            style: 'currency',
             currency: 'GBP',
-            maximumFractionDigits: 4 
+            maximumFractionDigits: 4
           }).format(Number(value)),
       },
     },
@@ -188,22 +188,22 @@ const PriceCharts = () => {
           throw new Error('Failed to fetch price data');
         }
         const { data } = await response.json();
-        
+
         if (!Array.isArray(data) || data.length === 0) {
           throw new Error('No price data available');
         }
-        
+
         // Sort data by date (oldest first)
-        const sortedData = [...data].sort((a, b) => 
+        const sortedData = [...data].sort((a, b) =>
           new Date(a.date).getTime() - new Date(b.date).getTime()
         );
-        
+
         // Prepare chart data
         const labels = sortedData.map(item => {
           const date = new Date(item.date);
           return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         });
-        
+
         setChartData({
           labels,
           datasets: [
@@ -228,7 +228,7 @@ const PriceCharts = () => {
             }
           ],
         });
-        
+
       } catch (err) {
         console.error('Error fetching price data:', err);
         setError('Failed to load price data');
@@ -273,17 +273,16 @@ const PriceCharts = () => {
           <button
             key={key}
             onClick={() => setActiveChart(key)}
-            className={`px-4 py-2 rounded-lg transition-colors ${
-              activeChart === key
+            className={`px-4 py-2 rounded-lg transition-colors ${activeChart === key
                 ? 'bg-indigo-600 text-white'
                 : 'text-gray-400 hover:text-gray-200 bg-gray-800/50 hover:bg-gray-700/50'
-            }`}
+              }`}
           >
             {title}
           </button>
         ))}
       </div>
-      
+
       <div className="w-full bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-6 border border-gray-800 shadow-lg">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-medium text-gray-200">
@@ -294,11 +293,10 @@ const PriceCharts = () => {
               <button
                 key={period}
                 onClick={() => setActiveTab(period)}
-                className={`px-3 py-1 text-sm rounded-md ${
-                  activeTab === period
+                className={`px-3 py-1 text-sm rounded-md ${activeTab === period
                     ? 'bg-indigo-600 text-white'
                     : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
-                }`}
+                  }`}
               >
                 {period.toUpperCase()}
               </button>
@@ -307,16 +305,16 @@ const PriceCharts = () => {
         </div>
         <div className="h-96 relative">
           <div className="absolute inset-0">
-            <Line 
+            <Line
               height={384}
               data={{
                 labels: chartData.labels,
-                datasets: chartData.datasets.filter(ds => 
+                datasets: chartData.datasets.filter(ds =>
                   (activeChart === 'price' && (ds.label === 'SUI/USD' || ds.label === 'GBP/USD')) ||
                   (activeChart === 'funds' && ds.label === 'Fund Value') ||
                   (activeChart === 'tokenPrice' && ds.label === 'Price per Token')
                 )
-              }} 
+              }}
               options={{
                 ...chartOptions,
                 scales: {
@@ -325,30 +323,30 @@ const PriceCharts = () => {
                     ...chartOptions.scales?.y,
                     ticks: {
                       ...chartOptions.scales?.y?.ticks,
-                      callback: (value: string | number) => 
-                        activeChart === 'price' 
-                          ? new Intl.NumberFormat('en-US', { 
-                              style: 'currency', 
-                              currency: 'USD',
-                              maximumFractionDigits: 4 
-                            }).format(Number(value))
+                      callback: (value: string | number) =>
+                        activeChart === 'price'
+                          ? new Intl.NumberFormat('en-US', {
+                            style: 'currency',
+                            currency: 'USD',
+                            maximumFractionDigits: 2
+                          }).format(Number(value))
                           : activeChart === 'funds'
                             ? new Intl.NumberFormat('en-US', {
-                                style: 'currency',
-                                currency: 'USD',
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
-                              }).format(Number(value))
+                              style: 'currency',
+                              currency: 'USD',
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2
+                            }).format(Number(value))
                             : new Intl.NumberFormat('en-US', {
-                                style: 'currency',
-                                currency: 'USD',
-                                minimumFractionDigits: 4,
-                                maximumFractionDigits: 6
-                              }).format(Number(value))
+                              style: 'currency',
+                              currency: 'USD',
+                              minimumFractionDigits: 4,
+                              maximumFractionDigits: 6
+                            }).format(Number(value))
                     }
                   }
                 }
-              }} 
+              }}
             />
           </div>
         </div>

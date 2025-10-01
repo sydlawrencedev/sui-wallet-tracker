@@ -1,7 +1,24 @@
 import { NextResponse } from 'next/server';
 import { getCachedPrice, updateCache, getDefaultPriceData, type PriceData } from '@/lib/priceCache';
 
-const DEEPBOOK_INDEXER_URL = 'https://deepbook-indexer.mainnet.mystenlabs.com/summary';
+// Dynamic imports for Node.js modules
+let fs: any;
+let path: any;
+
+async function initModules() {
+  if (!fs || !path) {
+    fs = await import('fs/promises');
+    path = await import('path');
+  }
+}
+
+// Initialize modules when the module loads
+const modulesInitialized = initModules();
+
+async function getPriceDataPath() {
+  await modulesInitialized;
+  return path.default.join(process.cwd(), '../sui-data/live-data-latest.csv');
+}
 
 // Helper to get today's date in YYYY-MM-DD format
 function getTodayDateString(): string {
@@ -26,7 +43,7 @@ const STALE_WHILE_REVALIDATE_MS = 10 * 60 * 1000; // 10 minutes - serve stale wh
 const MIN_FETCH_INTERVAL_MS = 30 * 1000; // 30 seconds - minimum time between API calls
 const LOG_INTERVAL_MS = 5 * 1000; // Only log every 5 seconds max per token
 
-// Helper function to fetch fresh price from DeepBook Indexer
+// Helper function to fetch fresh price from local CSV file
 async function fetchFreshPrice(token: string): Promise<number> {
   const now = Date.now();
   const tokenUpper = token.toUpperCase();
@@ -67,78 +84,96 @@ async function fetchFreshPrice(token: string): Promise<number> {
     return 1;
   }
 
-  const response = await fetch(DEEPBOOK_INDEXER_URL);
-  const responseData = await response.text();
-
-  if (!response.ok) {
-    console.error(`DeepBook Indexer API Error (${response.status}):`, responseData);
-    throw new Error(`DeepBook Indexer API failed with status: ${response.status}`);
-  }
-
-  let data;
+  let price = 0;
   try {
-    data = JSON.parse(responseData);
-  } catch (parseError) {
-    console.error('Failed to parse DeepBook Indexer response:', responseData);
-    throw new Error('Invalid JSON response from DeepBook Indexer');
-  }
+    // Read the CSV file
+    const priceDataPath = await getPriceDataPath();
+    const fileContent = await fs.readFile(priceDataPath, 'utf-8');
+    const lines = fileContent.trim().split('\n');
 
-  // For USDC, return 1 directly
-  if (token.toUpperCase() === 'USDC') {
-    return 1;
-  }
+    if (lines.length < 2) {
+      throw new Error('CSV file is empty or has no data rows');
+    }
 
-  // Determine the trading pair to look for
-  const tradingPair = token.toUpperCase() === 'SUI' ? 'SUI_USDC' : 'DEEP_USDC';
+    // The last line contains the most recent data
+    const lastLine = lines[lines.length - 1];
+    const firstComma = lastLine.indexOf(',');
+    if (firstComma === -1) {
+      throw new Error('Invalid CSV format: No comma found in data line');
+    }
 
-  // The response is an array of pairs, find the one we're interested in
-  if (!Array.isArray(data)) {
-    console.error('Expected array response from DeepBook Indexer, got:', typeof data);
-    throw new Error('Invalid response format from DeepBook Indexer');
-  }
+    let jsonStr = lastLine.substring(firstComma + 1).trim();
 
-  const pairData = data.find((pair: any) => pair.trading_pairs === tradingPair);
-
-  if (!pairData) {
-    const availablePairs = data.map((p: any) => p.trading_pairs).filter(Boolean);
-    console.error(`Trading pair ${tradingPair} not found in response. Available pairs:`, availablePairs);
-    throw new Error(`Trading pair not found: ${tradingPair}`);
-  }
-
-  if (pairData.last_price === undefined || pairData.last_price === null) {
-    console.error(`No last_price found for ${tradingPair} in:`, pairData);
-    throw new Error(`No price available for ${tradingPair}`);
-  }
-
-  const price = parseFloat(pairData.last_price);
-  if (isNaN(price)) {
-    console.error(`Invalid price value for ${tradingPair}:`, pairData.last_price);
-    throw new Error(`Invalid price value for ${tradingPair}`);
-  }
-
-  try {
-    // Only update the file cache if we have a valid price
-    if (price > 0) {
-      const today = getTodayDateString();
-      const cachedData = getCachedPrice(today) || getDefaultPriceData({ date: today });
-
-      // Only update if the price has changed significantly (more than 0.1%)
-      if (Math.abs((cachedData[tokenUpper as keyof PriceData] as number || 0) - price) / price > 0.001) {
-        const updatedData: PriceData = {
-          ...cachedData,
-          [tokenUpper]: price,
-          date: today,
-          timestamp: now
-        };
-
-        // Don't await this to avoid blocking the response
-        updateCache(updatedData).catch(error => {
-          console.error('Background cache update failed:', error);
-        });
+    try {
+      // Remove surrounding quotes if they exist
+      if (jsonStr.startsWith('"') && jsonStr.endsWith('"')) {
+        jsonStr = jsonStr.slice(1, -1);
       }
+
+      // Handle the escaped quotes in the JSON
+      let fixedJson = jsonStr.replace(/"""/g, '"'); // Replace """ with "
+      fixedJson = fixedJson.replace(/""/g, '"');     // Replace "" with "
+
+      // Parse the JSON data
+      const data = JSON.parse(fixedJson);
+
+      if (!Array.isArray(data)) {
+        throw new Error('Expected array of coin data in CSV');
+      }
+
+      // Find the token data
+      const tokenData = data.find((item: any) => item?.coin === tokenUpper);
+
+      if (!tokenData) {
+        const availableCoins = data.map((item: any) => item?.coin).filter(Boolean);
+        console.error(`Token ${tokenUpper} not found in CSV data. Available tokens:`, availableCoins);
+        throw new Error(`Token not found in price data: ${tokenUpper}`);
+      }
+
+      if (tokenData.close === undefined || tokenData.close === null) {
+        throw new Error(`Invalid price data for ${tokenUpper}: missing 'close' price`);
+      }
+
+      price = parseFloat(tokenData.close);
+      if (isNaN(price)) {
+        console.error(`Invalid price value for ${tokenUpper}:`, tokenData.close);
+        throw new Error(`Invalid price value for ${tokenUpper}`);
+      }
+
+      try {
+        // Only update the file cache if we have a valid price
+        if (price > 0) {
+          const today = getTodayDateString();
+          const cachedData = getCachedPrice(today) || getDefaultPriceData({ date: today });
+
+          // Only update if the price has changed significantly (more than 0.1%)
+          if (Math.abs((cachedData[tokenUpper as keyof PriceData] as number || 0) - price) / price > 0.001) {
+            const updatedData: PriceData = {
+              ...cachedData,
+              [tokenUpper]: price,
+              date: today,
+              timestamp: now
+            };
+
+            // Don't await this to avoid blocking the response
+            updateCache(updatedData).catch(error => {
+              console.error('Background cache update failed:', error);
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error in background cache update:', error);
+      }
+
+      return price;
+    } catch (parseError) {
+      console.error('Failed to parse price data from CSV:', parseError);
+      console.error('Problematic JSON string:', jsonStr);
+      throw new Error('Invalid JSON data in CSV file');
     }
   } catch (error) {
-    console.error('Error in background cache update:', error);
+    console.error(`Error fetching price for ${tokenUpper}:`, error);
+    throw error;
   } finally {
     // Process any queued callbacks and clear the fetching state
     if (priceCache[tokenUpper]) {
@@ -151,11 +186,10 @@ async function fetchFreshPrice(token: string): Promise<number> {
       callbacks.forEach(cb => cb(price));
     }
   }
-
-  return price;
 }
 
-export async function GET(request: Request) {
+// Export the GET function as a named export
+async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const token = searchParams.get('token');
   const useCache = searchParams.get('useCache') !== 'false';
@@ -169,7 +203,6 @@ export async function GET(request: Request) {
   }
 
   const tokenUpper = token.toUpperCase();
-
   const now = Date.now();
 
   // Check in-memory cache first (faster and reduces file I/O)
@@ -232,21 +265,14 @@ export async function GET(request: Request) {
         isStale: true
       });
     }
-
-    // If the cache is too stale, we'll fall through to a fresh fetch
   }
 
-  const upperToken = token.toUpperCase();
-  if (!['SUI', 'USDC', 'DEEP'].includes(upperToken)) {
-    return NextResponse.json({ error: `Token not supported: ${token}` }, { status: 400 });
-  }
-
+  // If we get here, we need to fetch a fresh price
   try {
-    // Fetch fresh price
-    const price = await fetchFreshPrice(upperToken);
+    const price = await fetchFreshPrice(tokenUpper);
 
     // Update in-memory cache with new price
-    priceCache[upperToken] = {
+    priceCache[tokenUpper] = {
       price,
       timestamp: now,
       lastFetched: now,
@@ -255,7 +281,7 @@ export async function GET(request: Request) {
       pendingCallbacks: []
     };
 
-    console.log(`[${new Date(now).toISOString()}] Fetched fresh ${upperToken} price: $${price}`);
+    console.log(`[${new Date(now).toISOString()}] Fetched fresh ${tokenUpper} price: $${price}`);
     return NextResponse.json({
       price,
       timestamp: now,
@@ -266,18 +292,18 @@ export async function GET(request: Request) {
 
     // If we have any cached data, return it even if stale
     if (cachedItem) {
-      console.log(`API failed, returning stale cache for ${upperToken}: $${cachedItem.price}`);
+      console.log(`API failed, returning stale cache for ${tokenUpper}: $${cachedItem.price}`);
       return NextResponse.json({
         price: cachedItem.price,
         timestamp: cachedItem.timestamp,
         isCached: true,
         isStale: true,
-        error: 'Using cached data due to API error: ' + (error instanceof Error ? error.message : String(error))
+        error: 'Using cached data due to error: ' + (error instanceof Error ? error.message : String(error))
       });
     }
 
     // No cache available, return error
-    console.error('No cached data available and API failed');
+    console.error('No cached data available and fetch failed');
     return NextResponse.json(
       {
         error: 'Failed to fetch price and no cached data available',
@@ -287,3 +313,7 @@ export async function GET(request: Request) {
     );
   }
 }
+
+// Export the GET function and set dynamic configuration
+export { GET };
+export const dynamic = 'force-dynamic';

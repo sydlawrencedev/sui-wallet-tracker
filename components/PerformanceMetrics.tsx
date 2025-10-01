@@ -59,7 +59,6 @@ interface FundsChartProps {
 
 function FundsChart({ latestTokenValue, suiPrice }: FundsChartProps) {
   const [priceData, setPriceData] = useState<PriceData[]>([]);
-  const [suiPriceData, setSuiPriceData] = useState<{ date: string, price: number }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -68,22 +67,19 @@ function FundsChart({ latestTokenValue, suiPrice }: FundsChartProps) {
         setIsLoading(true);
 
         // Fetch both price history and SUI price data in parallel
-        const [priceResponse, suiResponse] = await Promise.all([
+        const [priceResponse] = await Promise.all([
           fetch('/api/price-history'),
-          fetch('/api/token-price?token=SUI&days=30') // Assuming you have an endpoint for SUI price history
         ]);
 
-        if (!priceResponse.ok || !suiResponse.ok) {
-          throw new Error(`Error fetching data: ${priceResponse.status} ${suiResponse.status}`);
+        if (!priceResponse.ok) {
+          throw new Error(`Error fetching data: ${priceResponse.status}`);
         }
 
-        const [priceData, suiData] = await Promise.all([
+        const [priceData] = await Promise.all([
           priceResponse.json(),
-          suiResponse.json()
         ]);
 
         setPriceData(priceData.data);
-        setSuiPriceData(suiData.data || []);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -126,18 +122,9 @@ function FundsChart({ latestTokenValue, suiPrice }: FundsChartProps) {
       return denominator > 0 ? item.FUNDS / denominator : 0;
     });
 
-    // Prepare SUI price data
-    const suiPrices = suiPriceData
-      .filter(item => new Date(item.date).getTime() >= minDate)
-      .map(item => ({
-        x: item.date,
-        y: item.price
-      }));
-
-    // If we have a current SUI price, update the most recent data point
-    if (suiPrice && suiPrices.length > 0) {
-      suiPrices[suiPrices.length - 1].y = suiPrice;
-    }
+    const suiPrices = chartData.map(item => {
+      return item.SUI;
+    });
 
     return {
       labels,
@@ -156,7 +143,10 @@ function FundsChart({ latestTokenValue, suiPrice }: FundsChartProps) {
         },
         {
           label: 'SUI Price',
-          data: suiPrices,
+          data: suiPrices.map((price, index) => ({
+            x: labels[index],
+            y: price
+          })),
           borderColor: 'rgba(168, 85, 247, 0.8)',
           backgroundColor: 'rgba(168, 85, 247, 0.1)',
           borderWidth: 2,
@@ -190,8 +180,8 @@ function FundsChart({ latestTokenValue, suiPrice }: FundsChartProps) {
               label += new Intl.NumberFormat('en-US', {
                 style: 'currency',
                 currency: 'USD',
-                minimumFractionDigits: 8,
-                maximumFractionDigits: 8,
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
               }).format(context.parsed.y);
             }
             return label;
@@ -221,8 +211,8 @@ function FundsChart({ latestTokenValue, suiPrice }: FundsChartProps) {
             return new Intl.NumberFormat('en-US', {
               style: 'currency',
               currency: 'USD',
-              minimumFractionDigits: 8,
-              maximumFractionDigits: 8,
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
             }).format(value);
           },
         },
@@ -297,7 +287,6 @@ export default function PerformanceMetrics({ address, portfolioValue, suiPrice, 
     try {
 
       const { tokens, totalValue, totalGBPValue, error } = await getWalletData(address);
-      console.log(tokens);
       tokens.forEach(token => {
         if (token.symbol === "USDC") {
           if (token.balance / 1000000 < 10) {
