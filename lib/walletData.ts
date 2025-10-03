@@ -1,4 +1,3 @@
-import { TokenBalance } from '../services/suiExplorer';
 
 
 // Cache with 30 second TTL
@@ -10,7 +9,7 @@ const CACHE_TTL_MS = 30 * 1000; // 30 seconds
 export async function getWalletData(address: string) {
   const now = Date.now();
   const cacheKey = `wallet-${address}`;
-  
+
   // Return cached data if it exists and is not expired
   if (walletDataCache[cacheKey] && now - walletDataCache[cacheKey].timestamp < CACHE_TTL_MS) {
     return walletDataCache[cacheKey].data;
@@ -20,29 +19,29 @@ export async function getWalletData(address: string) {
     const response = await fetch(`/api/wallet/${address}`, {
       next: { revalidate: 30 } // Next.js specific: revalidate after 30 seconds
     });
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch wallet data');
     }
-    
+
     const data = await response.json();
-    
+
     // Update cache
     walletDataCache[cacheKey] = {
       data,
       timestamp: now
     };
-    
+
     return data;
   } catch (error) {
     console.error('Error fetching wallet data:', error);
-    
+
     // Return stale data if available, otherwise throw
     if (walletDataCache[cacheKey]?.data) {
       console.warn('Using stale wallet data due to fetch error');
       return walletDataCache[cacheKey].data;
     }
-    
+
     throw error;
   }
 }

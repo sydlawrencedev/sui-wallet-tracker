@@ -233,12 +233,13 @@ export interface TokenBalance {
 
 // Cache for token prices to avoid redundant API calls
 export const tokenPriceCache: Record<string, { priceUSD: number; timestamp: number }> = {};
-export const PRICE_CACHE_DURATION_MS = 1 * 60 * 1000; // 5 minutes
+let allPricesCache: { prices: Record<string, number>; timestamp: number } | null = null;
+const PRICE_CACHE_DURATION_MS = 10 * 1000; // 10 seconds
 
 // Default prices to use when API is rate limited or no cache is available
 const DEFAULT_PRICES: Record<string, number> = {
   SUI: 3.6203,   // Example default price
-  USDC: 1.0,  // USDC is pegged to $1
+  USDC: 1.0,     // USDC is pegged to $1
   DEEP: 0.1365   // Example default price
 };
 
@@ -259,6 +260,55 @@ function normalizeTokenSymbol(token: string): string {
   return token.toUpperCase();
 }
 
+async function fetchAllPrices(): Promise<Record<string, number>> {
+  const now = Date.now();
+
+  // If we have a valid cache, return it
+  if (allPricesCache && (now - allPricesCache.timestamp < PRICE_CACHE_DURATION_MS)) {
+    return allPricesCache.prices;
+  }
+
+  try {
+    // Determine the base URL based on environment
+    const baseUrl = typeof window === 'undefined'
+      ? process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+      : '';
+
+    // Fetch all prices at once
+    const response = await fetch(`${baseUrl}/api/token-price`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch prices: ${response.statusText}`);
+    }
+
+    const prices = await response.json();
+
+    // Update the all prices cache
+    allPricesCache = {
+      prices,
+      timestamp: now
+    };
+
+    // Also update individual token caches
+    Object.entries(prices).forEach(([token, price]) => {
+      tokenPriceCache[token] = {
+        priceUSD: price as number,
+        timestamp: now
+      };
+    });
+
+    return prices;
+  } catch (error) {
+    console.error('Error fetching all prices:', error);
+    // Return empty object if we can't fetch prices
+    return {};
+  }
+}
+
 async function getTokenPrice(token: string): Promise<number> {
   const normalizedToken = normalizeTokenSymbol(token);
   const now = Date.now();
@@ -276,73 +326,52 @@ async function getTokenPrice(token: string): Promise<number> {
     }
   }
 
-  // If we have an expired cache, use it while we fetch a new one
-  const expiredCache = cachedToken ? tokenPriceCache[cachedToken]?.priceUSD : undefined;
-
   // If we're rate limited, use expired cache or default price
   if (now < rateLimitResetTime) {
-    console.warn(`Rate limited, using ${expiredCache !== undefined ? 'expired cached' : 'default'} price for ${token}`);
+    console.warn(`Rate limited, using cached price for ${token}`);
+    const expiredCache = cachedToken ? tokenPriceCache[cachedToken]?.priceUSD : undefined;
     return expiredCache !== undefined ? expiredCache : (DEFAULT_PRICES[normalizedToken] || 0);
   }
 
   try {
-    // Determine the base URL based on environment
-    const baseUrl = typeof window === 'undefined'
-      ? process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-      : '';
+    // Fetch all prices
+    const allPrices = await fetchAllPrices();
 
-    // Use the API endpoint with proper base URL
-    const response = await fetch(`${baseUrl}/api/token-price?token=${token}`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    // Find the price for the requested token (case-insensitive)
+    const priceEntry = Object.entries(allPrices).find(
+      ([key]) => normalizeTokenSymbol(key) === normalizedToken
+    );
 
-    // Handle rate limiting (status 429)
-    if (response.status === 429) {
-      // Try to get Retry-After header, default to 60 seconds if not available
-      const retryAfter = parseInt(response.headers.get('Retry-After') || '60', 10) * 1000;
-      rateLimitResetTime = now + retryAfter;
-      console.warn(`Rate limited, will retry after ${retryAfter / 1000} seconds`);
-      return expiredCache !== undefined ? expiredCache : (DEFAULT_PRICES[token] || 0);
+    if (priceEntry) {
+      const [actualToken, price] = priceEntry;
+      // Update individual cache
+      tokenPriceCache[actualToken] = {
+        priceUSD: price,
+        timestamp: now
+      };
+      return price;
     }
 
-    if (!response.ok) {
-      console.error(`Failed to fetch ${token} price: ${response.statusText}`);
-      // If we have an expired cache, use it
-      if (expiredCache !== undefined) {
-        console.warn(`Using expired cached price for ${token} due to error`);
-        return expiredCache;
-      }
-
-      // Try to find a default price with case-insensitive match
-      const defaultPriceKey = Object.keys(DEFAULT_PRICES).find(
-        k => normalizeTokenSymbol(k) === normalizedToken
-      );
-      if (defaultPriceKey) {
-        console.warn(`Using default price for ${token} due to error`);
-        return DEFAULT_PRICES[defaultPriceKey];
-      }
-      return 0;
-    }
-
-    const data = await response.json();
-    const price = data.price;
-
-    // Update the cache with the new price using the original token case for consistency
-    const existingCacheKey = Object.keys(tokenPriceCache).find(
+    // If token not found in the all prices response, try to find a default price
+    const defaultPriceKey = Object.keys(DEFAULT_PRICES).find(
       k => normalizeTokenSymbol(k) === normalizedToken
-    ) || token; // Use the provided token as key if no existing cache found
+    );
 
-    tokenPriceCache[existingCacheKey] = {
-      priceUSD: price,
-      timestamp: now,
-    };
+    if (defaultPriceKey) {
+      console.warn(`Using default price for ${token} as it was not found in the prices response`);
+      return DEFAULT_PRICES[defaultPriceKey];
+    }
 
-    return price;
+    console.warn(`No price found for token: ${token}`);
+    return 0;
   } catch (error) {
-    console.error(`Error fetching ${token} price:`, error);
-    return expiredCache !== undefined ? expiredCache : (DEFAULT_PRICES[token] || 0);
+    console.error(`Error in getTokenPrice for ${token}:`, error);
+    // Try to use expired cache if available
+    const cachedToken = Object.keys(tokenPriceCache).find(
+      k => normalizeTokenSymbol(k) === normalizedToken
+    );
+    const expiredCache = cachedToken ? tokenPriceCache[cachedToken]?.priceUSD : undefined;
+    return expiredCache !== undefined ? expiredCache : (DEFAULT_PRICES[normalizedToken] || 0);
   }
 }
 
@@ -396,7 +425,7 @@ export async function fetchWalletBalances(address: string): Promise<TokenBalance
           decimals = 6;
         }
         // Handle AT1000i token
-        else if (coinType.endsWith('::AT1000i_ALPHA::AT1000I_ALPHA')) {
+        else if (coinType.endsWith('0xe41077d752aa3bf516690be8b8d223834ea3ba1321d92290897fe82ad5d74046::AT1000i_ALPHA::AT1000I_ALPHA')) {
           symbol = 'AT1000i';
           decimals = 9;
         } else {

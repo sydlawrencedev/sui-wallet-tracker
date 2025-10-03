@@ -3,6 +3,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { ConnectButton } from '@mysten/dapp-kit';
+
+
+const DEFAULT_SUI_ADDRESS = process.env.NEXT_PUBLIC_DEFAULT_SUI_ADDRESS || '';
 
 export function Navbar() {
   const pathname = usePathname();
@@ -11,6 +15,8 @@ export function Navbar() {
     { name: 'Dashboard', href: '/' },
     { name: 'Trades', href: '/trades' },
     { name: 'How To', href: '/how' },
+    { name: 'View on SuiScan', href: "https://suiscan.xyz/mainnet/account/" + DEFAULT_SUI_ADDRESS },
+
   ];
 
   return (
@@ -19,7 +25,7 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <h1 className="text-xl font-bold text-white">AT3000i α</h1>
+              <h1 className="text-xl font-bold text-white">AT3000i</h1>
             </div>
             <div className="md:block">
               <div className="ml-10 flex items-baseline space-x-4">

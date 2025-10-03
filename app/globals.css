@@ -12,14 +12,18 @@
 }
 
 :root {
-  --primary-color: #4f46e5;
+  --primary: #6c5ce7;
+  --primary-color: #6c5ce7;
   --primary-hover: #4338ca;
-  --text-color: #111827;
-  --text-light: #6b7280;
-  --bg-color: #f9fafb;
+  --text-color: #2d3436;
+  --text-light: #636e72;
+  --bg-color: #f8f9fa;
   --card-bg: #ffffff;
-  --border-color: #e5e7eb;
-  --success-color: #10b981;
+  --border: #dfe6e9;
+  --success: #00b894;
+
+  --border-color: #dfe6e9;
+  --success-color: #00b894;
   --danger-color: #ef4444;
   --warning-color: #f59e0b;
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -43,6 +47,10 @@
   }
 }
 
+:root {
+  --dapp-kit-colors-primaryButton: var(--primary-color);
+}
+
 /* Base styles */
 html {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -58,6 +66,7 @@ body {
   padding: 0;
   margin: 0;
   padding:1rem;
+  padding-bottom:7rem;
 }
 
 /* Layout */
@@ -66,6 +75,7 @@ body {
   max-width: 80rem;
   margin: 0 auto;
   padding: 0 1rem;
+  width:1000px;
 }
 
 @media (min-width: 640px) {
@@ -112,6 +122,13 @@ a:hover {
   cursor: pointer;
   transition: all 0.2s;
   border: 1px solid transparent;
+}
+
+.btn-no-outline {
+  border: none;
+  padding-right:0;
+  background:none;
+  color:white;
 }
 
 .btn-primary {
@@ -186,4 +203,170 @@ input, select, textarea {
 
 .animate-spin {
   animation: spin 1s linear infinite;
+}
+
+
+
+.single-column {
+  width:400px;
+  float:left;
+  margin-right:10px;
+}
+
+.min-h-screen {
+max-width:1230px;
+  }
+
+/* Card Styles */
+.wallet-card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  padding: 24px;
+  width: 100%;
+  max-width: 400px;
+  float:left;
+  margin-right:10px;
+  margin-bottom:10px;
+  min-height:358px;
+  display:block
+}
+
+.single-column .wallet-card {
+margin-right:0px;
+}
+
+.wallet-card.main-graph {
+  max-width: 810px;
+  float:right;
+  min-height:542px;
+}
+.wallet-card.two-thirds {
+  height:338px;
+}
+
+.wallet-card.small-height {
+  min-height:174px;
+}
+
+.wallet-card p {
+  font-size:0.8em;
+  margin-bottom:1em;
+}
+
+
+.wallet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1em;
+}
+
+
+.wallet-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-light);
+}
+
+.btn-more {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  transform: rotate(90deg);
+}
+
+/* Balance Styles */
+.balance-amount {
+  font-size: 40px;
+  font-weight: 700;
+  margin-bottom: 0px;
+}
+
+.balance-change {
+  display: flex;
+  align-items: center;
+  gap: 0px;
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+
+.balance-change.positive {
+  color: var(--success);
+}
+
+/* Chart Placeholder */
+.chart-placeholder {
+  height: 50px;
+  width:400px;
+  /* background: linear-gradient(90deg, #f1f3f5 0%, #e9ecef 100%); */
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+/* Buttons */
+.wallet-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-primary, .btn-outline {
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom:1em;
+}
+
+.btn-primary {
+  background: var(--primary) !important;
+  color: white !important;
+  border: none;
+  flex: 1;
+}
+
+.btn-outline {
+  background: white;
+  color: var(--primary);
+  border: 1px solid var(--border);
+  flex: 1;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn-outline:hover {
+  background: #f8f9fa;
+}
+
+.btn-primary.disabled {
+  background: var(--text-light) !important;
+  cursor: not-allowed;
+}
+.btn-outline.disabled {
+  background: var(--text-light);
+  cursor: not-allowed;
+}
+
+.footer {
+  position:fixed;
+  background: var(--bg-color);
+  bottom:0;
+  left:0;right:0;
+  padding:1rem;
+  font-size:0.8em;
+  margin-bottom:0;
+}
+.footer p {
+  margin:0;
+  padding:0;
 }

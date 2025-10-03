@@ -32,7 +32,7 @@ export async function GET(
     const cachedData = getCachedPrice(today) || getDefaultPriceData({ date: today });
 
     data.tokens.forEach((token) => {
-      if (token.symbol === "AT1000i") {
+      if (token.symbol === "AT1000i" && address === "0xbcae8fa928ed6606f78c8d0aead213d6e76d29041337dff3b9448e953e79fb39") {
         // Only update if the price has changed significantly (more than 0.1%)
         const updatedData: PriceData = {
           ...cachedData,

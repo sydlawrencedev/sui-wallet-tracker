@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server';
 import { getCachedPrice, updateCache, getDefaultPriceData, type PriceData } from '@/lib/priceCache';
 
+// Default prices to use when no cache is available
+const DEFAULT_PRICES: Record<string, number> = {
+  SUI: 3.6203,
+  USDC: 1.0,
+  DEEP: 0.1365,
+  AT1000i: 0
+};
+
 // Dynamic imports for Node.js modules
 let fs: any;
 let path: any;
@@ -194,12 +202,34 @@ async function GET(request: Request) {
   const token = searchParams.get('token');
   const useCache = searchParams.get('useCache') !== 'false';
 
-  if (token === "AT1000i") {
-    return NextResponse.json({ price: 0 }, { status: 200 });
+  // Handle case when no token is provided - return all default tokens
+  if (!token) {
+    const defaultTokens = ['DEEP', 'SUI', 'USDC', 'AT1000i'];
+    const prices: Record<string, number> = {};
+
+    for (const t of defaultTokens) {
+      if (t === 'AT1000i') {
+        prices[t] = 0;
+        continue;
+      }
+
+      const tokenUpper = t.toUpperCase();
+      const cachedItem = priceCache[tokenUpper];
+
+      if (cachedItem) {
+        prices[tokenUpper] = cachedItem.price;
+      } else {
+        // If not in cache, use default price or 0
+        prices[tokenUpper] = DEFAULT_PRICES[tokenUpper] || 0;
+      }
+    }
+
+    return NextResponse.json(prices);
   }
 
-  if (!token) {
-    return NextResponse.json({ error: 'Token symbol is required' }, { status: 400 });
+  // Handle single token request
+  if (token === "AT1000i") {
+    return NextResponse.json({ price: 0 }, { status: 200 });
   }
 
   const tokenUpper = token.toUpperCase();

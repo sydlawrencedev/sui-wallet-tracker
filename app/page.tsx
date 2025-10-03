@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { WalletInfo } from '@/components/WalletInfo';
 import { TransactionList } from '@/components/TransactionList';
 import PerformanceMetrics from '@/components/PerformanceMetrics';
+import { FundsChart } from '@/components/FundsChart';
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 
@@ -51,6 +52,7 @@ const DEFAULT_SUI_ADDRESS = process.env.NEXT_PUBLIC_DEFAULT_SUI_ADDRESS || '';
 
 export default function Home() {
   const [portfolioValue, setPortfolioValue] = useState<number>(0);
+  const [tokensInCirculation, setTokensInCirculation] = useState<number>(0);
   const [suiPrice, setSuiPrice] = useState<number>(0);
   const [walletStatus, setWalletStatus] = useState<number>(0);
 
@@ -62,6 +64,9 @@ export default function Home() {
         if (token.balance * 1 * 10 ** token.decimals > 5) {
           inTrade = true;
         }
+      }
+      if (token.name === "AT1000i") {
+        setTokensInCirculation(token.balance * 1 * 10 ** token.decimals);
       }
     });
 
@@ -120,11 +125,22 @@ export default function Home() {
 
 
 
+          <p className="text-xs text-gray-400" style={{ fontSize: '12px' }}>*Live prices may be delayed by up to 5 minutes. These figures are illustrative only, based on hypothetical assumptions. Past performance is not a reliable indicator of future results. Your capital is at risk and you may lose some or all of your investment.</p>
+
+          <div className="w-full mb-8">
+            <h3 className="text-lg font-medium mb-4">Share Price Over Time</h3>
+            <div className="h-120 w-full bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-6 border border-gray-800">
+              <FundsChart
+                latestTokenValue={tokensInCirculation && portfolioValue ? portfolioValue / tokensInCirculation : undefined}
+                suiPrice={suiPrice}
+              />
+            </div>
+          </div>
 
 
           {/* Main Chart */}
           <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 border border-gray-800 shadow-2xl">
-            <h2 className="text-xl font-semibold text-gray-200 mb-4">Trading Strategy Performance</h2>
+            <h2 className="text-xl font-semibold text-gray-200 mb-4">Recent Trading Strategy Performance</h2>
             <div className="overflow-hidden rounded-xl border border-gray-800">
               <AutoRefreshImage
                 src="/backtests/strategy_chart-SUI-USD-h3ka1-1min.png"
@@ -133,6 +149,8 @@ export default function Home() {
                 style={{ aspectRatio: '16/9', maxWidth: '100%', maxHeight: '100%' }}
               />
             </div>
+            <p className="text-xs text-gray-400" style={{ fontSize: '12px' }}>Live prices may be delayed by up to 5 minutes. These figures are illustrative only, based on hypothetical assumptions. Past performance is not a reliable indicator of future results. Your capital is at risk and you may lose some or all of your investment.</p>
+
           </div>
 
 
