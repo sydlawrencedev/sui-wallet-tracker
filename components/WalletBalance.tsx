@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { FundsChart } from './FundsChart';
 import { DepositForm } from './DepositForm';
-import { ConnectButton } from '@mysten/dapp-kit';
+import { ConnectButton, useConnectWallet, useCurrentWallet } from '@mysten/dapp-kit';
 
 interface TokenBalance {
     symbol: string;
@@ -37,6 +37,9 @@ export function WalletBalance(address: any) {
 
     const [isDepositOpen, setIsDepositOpen] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
+
+    const currentAccount = useConnectWallet();
+    console.log(currentAccount);
 
     const handleDeposit = async (amount: number) => {
         try {

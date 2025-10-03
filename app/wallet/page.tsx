@@ -110,12 +110,6 @@ export default function Wallet() {
 
     }, [address, loadWalletData]);
 
-    var testing = function () {
-        console.log("logging");
-        console.log(wallet);
-        console.log(autoConnectionStatus);
-    }
-
     return (
         <QueryClientProvider client={queryClient}>
             <SuiClientProvider networks={networkConfig} defaultNetwork="mainnet">
