@@ -28,21 +28,6 @@ ChartJS.register(
   Filler
 );
 
-interface PriceData {
-  date: string;
-  USDC: number;
-  SUI: number;
-  GBP: number;
-  FUNDS: number;
-  TOKENS_AVAILABLE: number;
-  DEEP?: number;
-}
-
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-};
-
 const chartOptions: ChartOptions<'line'> = {
   responsive: true,
   maintainAspectRatio: false,
@@ -73,6 +58,7 @@ const chartOptions: ChartOptions<'line'> = {
       padding: 12,
       cornerRadius: 8,
       callbacks: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         label: (context: any) => {
           let label = context.dataset.label || '';
           if (label) {
@@ -238,7 +224,7 @@ const PriceCharts = () => {
     };
 
     fetchPriceData();
-  }, []);
+  }, [chartData]);
 
   if (isLoading) {
     return (
@@ -274,8 +260,8 @@ const PriceCharts = () => {
             key={key}
             onClick={() => setActiveChart(key)}
             className={`px-4 py-2 rounded-lg transition-colors ${activeChart === key
-                ? 'bg-indigo-600 text-white'
-                : 'text-gray-400 hover:text-gray-200 bg-gray-800/50 hover:bg-gray-700/50'
+              ? 'bg-indigo-600 text-white'
+              : 'text-gray-400 hover:text-gray-200 bg-gray-800/50 hover:bg-gray-700/50'
               }`}
           >
             {title}
@@ -294,8 +280,8 @@ const PriceCharts = () => {
                 key={period}
                 onClick={() => setActiveTab(period)}
                 className={`px-3 py-1 text-sm rounded-md ${activeTab === period
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+                  ? 'bg-indigo-600 text-white'
+                  : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
                   }`}
               >
                 {period.toUpperCase()}

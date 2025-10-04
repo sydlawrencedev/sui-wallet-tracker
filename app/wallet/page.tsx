@@ -1,11 +1,12 @@
 'use client';
 
 
-import { ConnectButton, useCurrentWallet, useCurrentAccount, useAutoConnectWallet, createNetworkConfig, SuiClientProvider, WalletProvider } from '@mysten/dapp-kit';
+import { useCurrentWallet, useCurrentAccount, useAutoConnectWallet, createNetworkConfig, SuiClientProvider, WalletProvider } from '@mysten/dapp-kit';
 import { getFullnodeUrl } from '@mysten/sui/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect, useState, useCallback } from 'react';
-import { getWalletData, formatBalance } from '../../lib/walletData';
+import Image from 'next/image';
+import { getWalletData } from '../../lib/walletData';
 
 import { myTheme } from '../../utils/theme';
 
@@ -25,7 +26,14 @@ const DEFAULT_SUI_ADDRESS = process.env.NEXT_PUBLIC_DEFAULT_SUI_ADDRESS || '';
 
 
 // Image component with auto-refresh
-function AutoRefreshImage({ src, ...props }: { src: string;[key: string]: any }) {
+interface AutoRefreshImageProps {
+    src: string;
+    alt: string;
+    className?: string;
+    style?: React.CSSProperties;
+}
+
+function AutoRefreshImage({ src, alt, className, style }: AutoRefreshImageProps) {
     const [imgSrc, setImgSrc] = useState(src);
 
     useEffect(() => {
@@ -44,7 +52,17 @@ function AutoRefreshImage({ src, ...props }: { src: string;[key: string]: any })
         return () => clearInterval(interval);
     }, [src]);
 
-    return <img src={imgSrc} {...props} />;
+    return (
+        <Image
+            src={imgSrc}
+            alt={alt}
+            className={className}
+            style={style}
+            width={1200}
+            height={675}
+            priority
+        />
+    );
 }
 
 const queryClient = new QueryClient();
@@ -57,50 +75,32 @@ export default function Wallet() {
     console.log(account);
     console.log(wallet);
 
-    const [address, setAddress] = useState('');
     const [portfolioValue, setPortfolioValue] = useState<number>(0);
-    const [tokensInCirculation, setTokensInCirculation] = useState<number>(0);
-    const [suiPrice, setSuiPrice] = useState<number>(0);
     const [walletStatus, setWalletStatus] = useState<number>(0);
-    const [tokens, setTokens] = useState<TokenBalance[]>([]);
-    const [totalValue, setTotalValue] = useState<number>(0);
-    const [error, setError] = useState<string | null>(null);
 
 
     const loadWalletData = useCallback(async () => {
-
-        const { tokens, totalValue, totalGBPValue, error } = await getWalletData(DEFAULT_SUI_ADDRESS);
+        const { tokens, totalValue, error } = await getWalletData(DEFAULT_SUI_ADDRESS);
 
         if (error) {
-            setError(error);
-            setTokens([]);
             return;
         }
 
-        setTokens(tokens);
-        var inTrade = false;
+        let inTrade = false;
         tokens.forEach(token => {
             if (token.name === "SUI") {
                 if (token.balance * 1 * 10 ** token.decimals > 5) {
                     inTrade = true;
                 }
             }
-            if (token.name === "AT1000i") {
-                setTokensInCirculation(token.balance * 1 * 10 ** token.decimals);
-            }
+
         });
 
         setWalletStatus(inTrade ? 1 : 0);
         setPortfolioValue(totalValue);
 
-    });
+    }, []);
 
-    const setWalletAddress = function (newAddress) {
-        if (newAddress === address) {
-            return;
-        }
-        setAddress(newAddress);
-    }
 
     useEffect(() => {
         loadWalletData();
@@ -108,7 +108,7 @@ export default function Wallet() {
         const interval = setInterval(loadWalletData, 30000);
         return () => clearInterval(interval);
 
-    }, [address, loadWalletData]);
+    }, [loadWalletData]);
 
     return (
         <QueryClientProvider client={queryClient}>
@@ -139,7 +139,7 @@ export default function Wallet() {
 
                         </div>
 
-                        <PerformanceMetrics address={DEFAULT_SUI_ADDRESS} portfolioValue={portfolioValue} suiPrice={suiPrice} walletIn={walletStatus} />
+                        <PerformanceMetrics address={DEFAULT_SUI_ADDRESS} portfolioValue={portfolioValue} walletIn={walletStatus} />
 
                     </div>
                 </WalletProvider>

@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import React from 'react';
-import { getDeepPriceForDate, formatTokenWithUsd, getDeepPriceForAllDates } from '@/utils/priceApi';
+import { getDeepPriceForDate, getDeepPriceForAllDates } from '@/utils/priceApi';
 
-import { fetchAllWalletTransactions, getGasFees, processTransactionData } from '@/services/suiExplorer';
+import { fetchAllWalletTransactions, processTransactionData } from '@/services/suiExplorer';
 import { DateRangePicker } from './DateRangePicker';
 
 export interface TokenTransfer {
@@ -16,6 +16,20 @@ export interface TokenTransfer {
   to?: string;
 }
 
+export interface Tx {
+  id: string;
+  timestamp: number;
+  module: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  json: any;
+  asset: string;
+  amount: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  balanceChanges: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  transactions: any[];
+}
+
 export interface Transaction {
   id: string;
   type: 'send' | 'receive' | 'swap' | 'batch';
@@ -24,6 +38,7 @@ export interface Transaction {
   transfers: TokenTransfer[];
   usdValue: number;
   profitLoss: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   raw?: any; // For debugging
   protocol?: string;
   isSwap?: boolean;
@@ -35,18 +50,27 @@ export interface Transaction {
   entry?: string | number;
   exit?: string | number;
   // For trade grouping
-  buyTxs?: Transaction[];
-  sellTxs?: Transaction[];
+  buyTxs?: Tx[];
+  sellTxs?: Tx[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   transactions?: any[]; // For raw transaction data
 }
 
 export interface Trade {
   id: string;
-  fees: 0,
-  pnl: 0,
-  buyTxs: Transaction[],
-  sellTxs: Transaction[],
-  status: 'closed' | 'open'
+  fees: number;
+  pnl: number;
+  buyTxs: Transaction[];
+  sellTxs: Transaction[];
+  status: 'closed' | 'open';
+  entry: number;
+  exit: number;
+  entryPrice: number;
+  exitPrice: number;
+  feesUSD: number;
+  sui: number;
+  usdc: number;
+  pnlPct: number;
 }
 
 interface TransactionListProps {
@@ -55,55 +79,36 @@ interface TransactionListProps {
 
 
 export function TransactionList({ address }: TransactionListProps) {
-  const currentYear = new Date().getFullYear();
   const [dateRange, setDateRange] = useState({
-    start: new Date(2025, 8, 26), // first trade was 26th september
+    start: new Date(2025, 8, 29), // first trade was 26th september
     end: new Date(),
   });
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [priceCache, setPriceCache] = useState<Record<string, number | null>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pricesLoaded, setPricesLoaded] = useState(false);
 
   // Load all price data on component mount
   useEffect(() => {
     const loadPrices = async () => {
       try {
         await getDeepPriceForAllDates();
-        setPricesLoaded(true);
       } catch (error) {
         console.error('Error loading price data:', error);
         // Continue even if price loading fails
-        setPricesLoaded(true);
       }
     };
 
     loadPrices();
   }, []);
 
-  // Update trade with USD values
-  const updateTradeWithUSD = async (trade: any) => {
-    if (trade.buyTxs && trade.buyTxs.length > 0) {
-      const buyTx = trade.buyTxs[0];
-      if (buyTx.transactions?.[0]?.timestamp) {
-        const price = await getDeepPriceForDate(new Date(buyTx.transactions[0].timestamp));
-        if (price) {
-          trade.feesUSD = trade.fees * price;
-        }
-      }
-    }
-    return trade;
-  };
-
-  const groupTrades = (txs: any[]): Trade[] => {
-    var trades = [];
-    txs.forEach((tx: any) => {
+  const groupTrades = (txs: Tx[]): Trade[] => {
+    const trades: Trade[] = [];
+    txs.forEach((tx: Tx) => {
 
       if (trades.length === 0 && tx.balanceChanges['USDC'] < 0) {
         trades.push({
           id: tx.transactions[0].id,
-          fees: Math.abs(tx.balanceChanges['DEEP'] * 1) * 1,
+          fees: Math.abs(tx.balanceChanges['DEEP'] * 1),
           pnl: 0,
           buyTxs: [tx],
           sellTxs: [tx],
@@ -163,22 +168,25 @@ export function TransactionList({ address }: TransactionListProps) {
   }
 
   // Helper to group transactions by digest
-  const groupTransactions = (txs: any[]): Transaction[] => {
-    let grouped = {};
+  const groupTransactions = (txs: Tx[]): Transaction[] => {
+    const grouped = {};
 
-    txs.forEach((tx: any) => {
+    txs.forEach((tx: Tx) => {
       if (grouped[tx.id] === undefined) {
-        grouped[tx.id] = { balanceChanges: {}, transactions: [], gas: 0 };
+        grouped[tx.id] = {
+          balanceChanges: {},
+          transactions: []
+        };
       }
       if (tx.module === "pool") {
         if (grouped[tx.id].balanceChanges[tx.asset] === undefined) {
           grouped[tx.id].balanceChanges[tx.asset] = 0;
         }
         if (tx.json.deposit !== undefined && tx.json.deposit === false) {
-          grouped[tx.id].balanceChanges[tx.asset] += tx.amount * 1;
+          grouped[tx.id].balanceChanges[tx.asset] += Number(tx.amount);
         }
         if (tx.json.deposit !== undefined && tx.json.deposit === true) {
-          grouped[tx.id].balanceChanges[tx.asset] -= tx.amount * 1;
+          grouped[tx.id].balanceChanges[tx.asset] -= Number(tx.amount);
         }
       }
       grouped[tx.id].transactions.push(tx);
@@ -206,7 +214,7 @@ export function TransactionList({ address }: TransactionListProps) {
       console.log('Raw transactions count:', rawTransactions.length);
 
       // Process transactions
-      let processedTransactions = processTransactionData(rawTransactions, address);
+      const processedTransactions = processTransactionData(rawTransactions, address);
       console.log('Processed transactions:', processedTransactions);
       console.log(`Number of processed transactions: ${processedTransactions.length}`)
 
@@ -234,7 +242,7 @@ export function TransactionList({ address }: TransactionListProps) {
       setError(err instanceof Error ? err.message : 'Failed to fetch transactions');
       console.error('Error fetching transactions:', err);
     } finally {
-      setIsLoading(false);
+
     }
   }, [address, dateRange]);
 
@@ -242,57 +250,6 @@ export function TransactionList({ address }: TransactionListProps) {
   useEffect(() => {
     fetchTransactions();
   }, [fetchTransactions]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
-  };
-
-  // Helper to format token amounts
-  const formatTokenAmount = (amount: string, decimals: number = 9) => {
-    if (amount === "") return "";
-    if (amount === "undefined") return "";
-    try {
-      // Handle negative numbers
-      const isNegative = amount.startsWith('-');
-      const absAmount = isNegative ? amount.substring(1) : amount;
-
-      const num = BigInt(absAmount);
-      const divisor = BigInt(10 ** decimals);
-      const intPart = num / divisor;
-      let fracPart = (num % divisor).toString().padStart(decimals, '0').replace(/0+$/, '');
-
-      // Limit to 4 decimal places for display
-      if (fracPart.length > 4) {
-        fracPart = fracPart.substring(0, 4);
-      }
-
-      return `${isNegative ? '-' : ''}${intPart.toLocaleString()}${fracPart ? `.${fracPart}` : ''}`;
-    } catch (e) {
-      console.error('Error formatting amount:', amount, e);
-      return amount;
-    }
-  };
-
-  // Helper function to get token symbol from coin type
-  const getTokenSymbol = (coinType: string | { name: string }): string => {
-    if (!coinType) return 'TOKEN';
-
-    const type = typeof coinType === 'string' ? coinType : coinType?.name || '';
-
-    if (type.includes('sui::sui::SUI') || type.endsWith('::sui::SUI')) return 'SUI';
-    if (type.includes('usdc::USDC') || type.endsWith('::usdc::USDC')) return 'USDC';
-    if (type.includes('deep::DEEP') || type.endsWith('::deep::DEEP')) return 'DEEP';
-    if (type.includes('sca::SCA') || type.endsWith('::sca::SCA')) return 'SCA';
-    if (type.includes('::')) return type.split('::').pop() || 'TOKEN';
-    return 'TOKEN';
-  };
-
-
 
   // Helper to format date
   const formatDate = (timestamp: number) => {
@@ -304,64 +261,11 @@ export function TransactionList({ address }: TransactionListProps) {
     });
   };
 
-  // Helper to render transaction transfers
-  const renderTransfers = (transfers: TokenTransfer[]) => {
-    if (!transfers || transfers.length === 0) return null;
-
-    return (
-      <div className="space-y-1">
-        {transfers.map((transfer, idx) => {
-          if (!transfer) return null;
-
-          const isIncoming = transfer.to === address;
-          const isNegative = transfer.amount.startsWith('-');
-          const displayAmount = isNegative ? transfer.amount.substring(1) : transfer.amount;
-
-          return (
-            <div key={idx} className="flex justify-between items-center">
-              <div className="flex items-center">
-                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${isIncoming ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                  {isIncoming ? 'IN' : 'OUT'}
-                </span>
-                <span className="ml-2 text-sm">
-                  {formatTokenAmount(displayAmount, transfer.decimals || 9)} {transfer.token}
-                </span>
-              </div>
-              {transfer.usdValue !== undefined && transfer.usdValue > 0 && (
-                <span className={`text-xs ${isIncoming ? 'text-green-600' : 'text-red-600'}`}>
-                  ${transfer.usdValue.toFixed(2)}
-                </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
-  // Helper to get transaction type label
-  const getTransactionTypeLabel = (tx: Transaction) => {
-    if (tx.balanceChanges.USDC > 0) return "Sell";
-    if (tx.balanceChanges.USDC < 0) return "Buy";
-
-
-
-    if (tx.isSwap) return 'Swap';
-    if (tx.type === 'batch') return 'Batch Transfer';
-    return tx.type === 'receive' ? 'Received' : 'Sent';
-  };
-
-  const getBuyIn = (tx: Transaction) => {
-    return tx.buyTxs[0].balanceChanges['USDC'] / 1000000 * -1;
-  }
-
   return (
     <div className="mt-8">
       <DateRangePicker
         dateRange={dateRange}
         setDateRange={setDateRange}
-        formatCurrency={formatCurrency}
       />
 
       {isLoading ? (

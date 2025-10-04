@@ -2,30 +2,18 @@
 
 import Link from 'next/link';
 import { WalletInfo } from '@/components/WalletInfo';
-import { TransactionList } from '@/components/TransactionList';
 import PerformanceMetrics from '@/components/PerformanceMetrics';
 import { FundsChart } from '@/components/FundsChart';
-import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
-
-// Dynamically import the PriceCharts component with SSR disabled
-const PriceCharts = dynamic(
-  () => import('@/components/PriceCharts').then((mod) => mod.default),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-6 border border-gray-800 shadow-lg mb-8">
-        <div className="animate-pulse">
-          <div className="h-6 bg-gray-800 rounded w-1/3 mb-6"></div>
-          <div className="h-80 bg-gray-800 rounded"></div>
-        </div>
-      </div>
-    ),
-  }
-);
+import Image, { ImageProps } from 'next/image';
 
 // Image component with auto-refresh
-function AutoRefreshImage({ src, ...props }: { src: string;[key: string]: any }) {
+interface AutoRefreshImageProps extends Omit<ImageProps, 'src' | 'alt'> {
+  src: string;
+  alt: string;
+}
+
+function AutoRefreshImage({ src, alt, ...props }: AutoRefreshImageProps) {
   const [imgSrc, setImgSrc] = useState(src);
 
   useEffect(() => {
@@ -44,7 +32,7 @@ function AutoRefreshImage({ src, ...props }: { src: string;[key: string]: any })
     return () => clearInterval(interval);
   }, [src]);
 
-  return <img src={imgSrc} {...props} />;
+  return <Image src={imgSrc} alt={alt} width={500} height={300} {...props} />;
 }
 
 // Hardcoded SUI wallet address for demonstration
@@ -52,27 +40,18 @@ const DEFAULT_SUI_ADDRESS = process.env.NEXT_PUBLIC_DEFAULT_SUI_ADDRESS || '';
 
 export default function Home() {
   const [portfolioValue, setPortfolioValue] = useState<number>(0);
-  const [tokensInCirculation, setTokensInCirculation] = useState<number>(0);
   const [suiPrice, setSuiPrice] = useState<number>(0);
   const [walletStatus, setWalletStatus] = useState<number>(0);
 
-  let walletChange = function (totalValue, tokens) {
-
-    var inTrade = false;
-    tokens.forEach(token => {
-      if (token.name === "SUI") {
-        if (token.balance * 1 * 10 ** token.decimals > 5) {
-          inTrade = true;
-        }
-      }
-      if (token.name === "AT1000i") {
-        setTokensInCirculation(token.balance * 1 * 10 ** token.decimals);
-      }
-    });
-
-    setWalletStatus(inTrade ? 1 : 0);
+  const walletChange = (totalValue: number) => {
     setPortfolioValue(totalValue);
-    console.log("wallet change", totalValue, tokens)
+
+    // If you need to track tokens in circulation and trading status,
+    // you should fetch this data separately or modify the WalletInfo component
+    // to provide this information through a different callback
+
+    // For now, we'll just log the total value
+    console.log("wallet value changed:", totalValue);
   }
 
   // Fetch latest SUI price
@@ -131,8 +110,8 @@ export default function Home() {
             <h3 className="text-lg font-medium mb-4">Share Price Over Time</h3>
             <div className="h-120 w-full bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-6 border border-gray-800">
               <FundsChart
-                latestTokenValue={tokensInCirculation && portfolioValue ? portfolioValue / tokensInCirculation : undefined}
-                suiPrice={suiPrice}
+              //latestTokenValue={tokensInCirculation && portfolioValue ? portfolioValue / tokensInCirculation : undefined}
+              //suiPrice={suiPrice}
               />
             </div>
           </div>

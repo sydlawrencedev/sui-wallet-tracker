@@ -1,8 +1,27 @@
 
 
 // Cache with 30 second TTL
+interface WalletDataCache {
+  tokens: Array<{
+    symbol: string;
+    balance: string;
+    decimals: number;
+    priceUSD: number;
+    priceGBP: number;
+    valueUSD: number;
+    valueGBP: number;
+    profitLoss: number;
+    priceChange24h: number;
+    coinType: string;
+    lastUpdated: string;
+  }>;
+  totalValue: number;
+  totalGBPValue: number;
+  error: string | null;
+}
+
 const walletDataCache: {
-  [key: string]: { data: any; timestamp: number };
+  [key: string]: { data: WalletDataCache; timestamp: number };
 } = {};
 const CACHE_TTL_MS = 30 * 1000; // 30 seconds
 

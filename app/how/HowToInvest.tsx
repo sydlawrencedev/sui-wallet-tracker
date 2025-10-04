@@ -23,7 +23,7 @@ export default function HowToInvest() {
         </p>
 
         <p className="mt-4">
-          You should only be reading this because it has been sent to you directly. This hasn't been publicly promoted anywhere.
+          You should only be reading this because it has been sent to you directly. This hasn&apos;t been publicly promoted anywhere.
         </p>
 
         <p className="font-semibold text-amber-400 mt-4">
@@ -71,7 +71,7 @@ export default function HowToInvest() {
         <div className="mb-6">
           <h3 className="text-xl font-medium text-gray-300 mt-6 mb-3">Deposit your funds</h3>
           <p>
-            Once you've received it in your wallet. Send it to the address of AT3000i:
+            Once you&apos;ve received it in your wallet. Send it to the address of AT3000i:
           </p>
           <div className="relative">
             <div className="bg-gray-800 p-3 pr-16 rounded-lg mt-2 break-all font-mono">

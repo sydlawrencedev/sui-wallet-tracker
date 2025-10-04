@@ -5,13 +5,19 @@ import { getCachedPrice, updateCache, getDefaultPriceData, type PriceData } from
 
 export const dynamic = 'force-dynamic'; // Ensure fresh data on each request
 
+import { NextRequest } from 'next/server';
+
+type RouteParams = {
+  params: {
+    address: string;
+  };
+};
+
 export async function GET(
-  request: Request,
-  { params }: { params: { address: string } }
+  request: NextRequest,
+  { params }: RouteParams
 ) {
-  // Ensure params is resolved before accessing its properties
-  const resolvedParams = await Promise.resolve(params);
-  const address = resolvedParams.address;
+  const { address } = params;
 
   if (!address) {
     return NextResponse.json(

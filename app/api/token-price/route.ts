@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getCachedPrice, updateCache, getDefaultPriceData, type PriceData } from '@/lib/priceCache';
 
+import type TokenPriceData from '../../lib/types.js'
+
 // Default prices to use when no cache is available
 const DEFAULT_PRICES: Record<string, number> = {
   SUI: 3.6203,
@@ -10,7 +12,9 @@ const DEFAULT_PRICES: Record<string, number> = {
 };
 
 // Dynamic imports for Node.js modules
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let fs: any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let path: any;
 
 async function initModules() {
@@ -130,10 +134,10 @@ async function fetchFreshPrice(token: string): Promise<number> {
       }
 
       // Find the token data
-      const tokenData = data.find((item: any) => item?.coin === tokenUpper);
+      const tokenData = data.find((item: TokenPriceData) => item?.coin === tokenUpper);
 
       if (!tokenData) {
-        const availableCoins = data.map((item: any) => item?.coin).filter(Boolean);
+        const availableCoins = data.map((item: TokenPriceData) => item?.coin).filter(Boolean);
         console.error(`Token ${tokenUpper} not found in CSV data. Available tokens:`, availableCoins);
         throw new Error(`Token not found in price data: ${tokenUpper}`);
       }
@@ -200,7 +204,6 @@ async function fetchFreshPrice(token: string): Promise<number> {
 async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const token = searchParams.get('token');
-  const useCache = searchParams.get('useCache') !== 'false';
 
   // Handle case when no token is provided - return all default tokens
   if (!token) {

@@ -1,19 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-
 interface DateRangePickerProps {
   dateRange: { start: Date; end: Date };
   setDateRange: (range: { start: Date; end: Date }) => void;
-  totalProfitLoss: number;
-  formatCurrency: (value: number) => string;
 }
 
 export function DateRangePicker({
   dateRange,
   setDateRange,
-  totalProfitLoss,
-  formatCurrency
 }: DateRangePickerProps) {
   return (
     <div style={{

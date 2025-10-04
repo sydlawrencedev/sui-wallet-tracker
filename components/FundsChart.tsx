@@ -29,15 +29,16 @@ interface PriceData {
     TOKENS_AVAILABLE: number;
     FUNDS: number;
     SUI?: number;
-    [key: string]: any;
+    GBP?: number;
+    DEEP?: number;
+    USDC?: number;
 }
 
 export interface FundsChartProps {
     latestTokenValue?: number;
-    suiPrice?: number;
 }
 
-export function FundsChart({ latestTokenValue, suiPrice }: FundsChartProps) {
+export function FundsChart({ latestTokenValue }: FundsChartProps) {
     const [priceData, setPriceData] = useState<PriceData[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -155,6 +156,7 @@ export function FundsChart({ latestTokenValue, suiPrice }: FundsChartProps) {
             },
             tooltip: {
                 callbacks: {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     label: function (context: any) {
                         let label = context.dataset.label || '';
                         if (label) {

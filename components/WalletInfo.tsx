@@ -9,12 +9,10 @@ interface WalletInfoProps {
   onTotalValueChange?: (value: number) => void;
 }
 
-
 export function WalletInfo({ address, onTotalValueChange }: WalletInfoProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [tokens, setTokens] = useState<TokenBalance[]>([]);
   const [totalValue, setTotalValue] = useState<number>(0);
-  const [totalGBPValue, setTotalGBPValue] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
 
   const loadWalletData = useCallback(async () => {
@@ -22,7 +20,7 @@ export function WalletInfo({ address, onTotalValueChange }: WalletInfoProps) {
       setIsLoading(true);
       setError(null);
 
-      const { tokens, totalValue, totalGBPValue, error } = await getWalletData(address);
+      const { tokens, totalValue, error } = await getWalletData(address);
 
       if (error) {
         setError(error);
@@ -32,7 +30,6 @@ export function WalletInfo({ address, onTotalValueChange }: WalletInfoProps) {
 
       setTokens(tokens);
       setTotalValue(totalValue);
-      setTotalGBPValue(totalGBPValue);
 
       // Notify parent component about the total value change
       if (onTotalValueChange) {
@@ -44,7 +41,7 @@ export function WalletInfo({ address, onTotalValueChange }: WalletInfoProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [address]);
+  }, [address, onTotalValueChange]);
 
   useEffect(() => {
     loadWalletData();

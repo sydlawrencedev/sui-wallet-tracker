@@ -119,7 +119,6 @@ export function DepositForm({ isOpen, onClose, maxAmount, onDeposit, fxRate, tok
             <div className="wallet-actions">
                 <button
                     type="submit"
-                    className="btn-primary"
                     onClick={handleSubmit}
                     className={Math.floor(amount) < 100 ? "btn-primary disabled" : "btn-primary"}
                 >

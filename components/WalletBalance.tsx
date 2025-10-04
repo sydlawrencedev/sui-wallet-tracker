@@ -3,26 +3,18 @@
 import { useEffect, useState } from 'react';
 import { FundsChart } from './FundsChart';
 import { DepositForm } from './DepositForm';
-import { ConnectButton, useConnectWallet, useCurrentWallet } from '@mysten/dapp-kit';
-
-interface TokenBalance {
-    symbol: string;
-    balance: string;
-    usdValue?: string;
-}
-
-interface WalletData {
-    address: string;
-    tokens: TokenBalance[];
-}
+import { ConnectButton, useConnectWallet } from '@mysten/dapp-kit';
 
 interface Tokens {
     usdc: string;
     at1000i: string;
 }
 
-export function WalletBalance(address: any) {
-    const [walletData, setWalletData] = useState<WalletData | null>(null);
+interface Account {
+    address: string;
+}
+
+export function WalletBalance(address: Account) {
     const [tokens, setTokens] = useState<Tokens | null>({
         usdc: "0",
         at1000i: "0"
@@ -36,33 +28,15 @@ export function WalletBalance(address: any) {
     const [previousSharePrice, setPreviousSharePrice] = useState<number>(0);
 
     const [isDepositOpen, setIsDepositOpen] = useState(false);
-    const [isProcessing, setIsProcessing] = useState(false);
 
     const currentAccount = useConnectWallet();
     console.log(currentAccount);
 
     const handleDeposit = async (amount: number) => {
         try {
-            setIsProcessing(true);
             // Call your deposit API here
             console.log('Depositing:', amount);
-            // Example API call (uncomment and implement your actual API endpoint)
-            /*
-            const response = await fetch('/api/deposit', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ amount }),
-            });
-            
-            if (!response.ok) {
-                throw new Error('Deposit failed');
-            }
-            
-            // Refresh wallet data after successful deposit
-            await fetchWalletData();
-            */
+
 
             // Close the deposit form
             setIsDepositOpen(false);
@@ -72,13 +46,10 @@ export function WalletBalance(address: any) {
         } catch (error) {
             console.error('Deposit error:', error);
             alert('Deposit failed. Please try again.');
-        } finally {
-            setIsProcessing(false);
         }
     };
 
     useEffect(() => {
-
 
         const fetchPriceHistory = async () => {
             try {
@@ -91,7 +62,7 @@ export function WalletBalance(address: any) {
                     const { data: prices } = await pricesResponse.json();
                     if (prices && prices.length > 0) {
                         // Get the most recent price data
-                        let previousData = prices[Math.min(7, prices.length - 1)]
+                        const previousData = prices[Math.min(7, prices.length - 1)]
 
                         const latestData = prices[0];
                         console.log("got latest data,", latestData)
@@ -105,7 +76,6 @@ export function WalletBalance(address: any) {
         }
         fetchPriceHistory();
         if (!address.address) {
-            setWalletData(null);
 
             return;
         }
@@ -113,12 +83,7 @@ export function WalletBalance(address: any) {
 
         const fetchWalletData = async () => {
             try {
-                // setLoading(true);
                 setError(null);
-
-
-
-
 
                 const response = await fetch(`/api/wallet/${address.address}`);
                 if (!response.ok) {
@@ -136,10 +101,7 @@ export function WalletBalance(address: any) {
                     }
                 });
 
-
-
                 setTokens(tokens);
-                setWalletData(data);
             } catch (err) {
                 console.error('Error fetching wallet data:', err);
                 setError('Failed to load wallet data');
@@ -151,7 +113,7 @@ export function WalletBalance(address: any) {
         fetchWalletData();
         const interval = setInterval(fetchWalletData, 30000);
         return () => clearInterval(interval);
-    }, [address]);
+    }, [address, tokens]);
 
     if (!address) {
         return null;
@@ -175,9 +137,6 @@ export function WalletBalance(address: any) {
             </div>
         );
     }
-
-
-
 
     return (
         <div className="single-column">
@@ -233,7 +192,7 @@ export function WalletBalance(address: any) {
 
                 {!address.address && (
                     <div>
-                        <p>Let's make more money!</p>
+                        <p>Let&apos;s make more money!</p>
                         <p>Capital is at risk. Min deposit $100</p>
                         <div className="wallet-actions">
                             <ConnectButton className="btn-primary" />

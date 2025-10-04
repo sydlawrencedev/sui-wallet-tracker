@@ -27,7 +27,7 @@ export async function getDeepPriceForAllDates(): Promise<void> {
     console.log("data", data.data)
     allPricesCache = data.data;
     // Populate the price cache with all the data
-    data.data.forEach((priceData: any) => {
+    data.data.forEach((priceData: PriceData) => {
       if (priceData.DEEP !== undefined) {
         priceCache.set(priceData.date, priceData.DEEP);
       }
@@ -39,7 +39,7 @@ export async function getDeepPriceForAllDates(): Promise<void> {
   }
 }
 
-await getDeepPriceForAllDates();
+getDeepPriceForAllDates();
 
 /**
  * Get the DEEP token price in USD for a specific date (synchronous, cache-only)

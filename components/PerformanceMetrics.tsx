@@ -1,60 +1,30 @@
 'use client';
 
 import { AnimatedNumber } from './AnimatedNumber';
-import { getWalletData, formatBalance } from '../lib/walletData';
-import { FundsChart } from './FundsChart';
-import { useEffect, useState, useMemo, useCallback } from 'react';
-
-interface PriceData {
-  date: string;
-  TOKENS_AVAILABLE: number;
-  FUNDS: number;
-  [key: string]: any;
-}
-
-interface BacktestResult {
-  initialBalance: number;
-  finalBalance: number;
-  totalReturn: number;
-  hodl: number;
-  trades: Array<{
-    entryTime: string;
-    exitTime: string;
-  }>;
-}
+import { getWalletData } from '../lib/walletData';
+import { useEffect, useState, useCallback } from 'react';
 
 interface PerformanceMetricsProps {
   portfolioValue?: number;
   suiPrice?: number;
   address: string;
+  walletIn?: number;
 }
 
-interface FundsChartProps {
-  latestTokenValue?: number;
-  suiPrice?: number;
-}
+export default function PerformanceMetrics({ address, portfolioValue }: PerformanceMetricsProps) {
 
-export default function PerformanceMetrics({ address, portfolioValue, suiPrice, walletIn }: PerformanceMetricsProps) {
-  const [metrics, setMetrics] = useState<BacktestResult>({
-    initialBalance: 0,
-    finalBalance: 0,
-    totalReturn: 0,
-    hodl: 0,
-    trades: [],
-  });
   const [tokensInCirculation, setTokensInCirculation] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [walletStatus, setWalletStatus] = useState<number>(0);
 
   const loadWalletData = useCallback(async () => {
     try {
 
-      const { tokens, totalValue, totalGBPValue, error } = await getWalletData(address);
+      const { tokens, error } = await getWalletData(address);
       tokens.forEach(token => {
         if (token.symbol === "USDC") {
           if (token.balance / 1000000 < 10) {
-            setWalletStatus(1);
+
           }
         }
       });
@@ -75,26 +45,16 @@ export default function PerformanceMetrics({ address, portfolioValue, suiPrice, 
 
     loadWalletData();
 
-    if (walletIn !== undefined) {
-      setWalletStatus(walletIn);
-      setTokensInCirculation(tokensInCirculation);
-
-    }
-  }, [walletIn]);
+    setTokensInCirculation(tokensInCirculation);
+  }, [loadWalletData, tokensInCirculation]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         // Fetch backtest data
-        const [backtestResponse, pricesResponse] = await Promise.all([
-          fetch('/backtests/latest.json'),
+        const [pricesResponse] = await Promise.all([
           fetch('/api/price-history')
         ]);
-
-        if (backtestResponse.ok) {
-          const backtestData = await backtestResponse.json();
-          setMetrics(backtestData);
-        }
 
         if (pricesResponse.ok) {
           const { data: prices } = await pricesResponse.json();
@@ -122,38 +82,6 @@ export default function PerformanceMetrics({ address, portfolioValue, suiPrice, 
   if (error) {
     return <div className="text-center py-4 text-red-500">Error: {error}</div>;
   }
-
-  if (!metrics) {
-    return null;
-  }
-
-  const formatTimeSince = (dateString: string) => {
-    const now = new Date();
-    const date = new Date(dateString);
-    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    const intervals = {
-      year: 31536000,
-      month: 2592000,
-      week: 604800,
-      day: 86400,
-      hour: 3600,
-      minute: 60,
-      second: 1
-    };
-
-    for (const [unit, secondsInUnit] of Object.entries(intervals)) {
-      const interval = Math.floor(seconds / secondsInUnit);
-      if (interval >= 1) {
-        return interval === 1 ? `${interval} ${unit} ago` : `${interval} ${unit}s ago`;
-      }
-    }
-
-    return 'just now';
-  };
-
-  const lastTrade = metrics.trades.length > 0 ? metrics.trades[metrics.trades.length - 1] : null;
-  const firstTrade = metrics.trades.length > 0 ? metrics.trades[0] : null;
 
   return (
 
@@ -206,8 +134,6 @@ export default function PerformanceMetrics({ address, portfolioValue, suiPrice, 
         <div className="balance-amount">$179,921</div>
 
       </div>
-
-
 
     </div>
   );

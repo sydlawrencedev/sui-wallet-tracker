@@ -1,8 +1,17 @@
 import fs from 'fs';
 import path from 'path';
 
+import type { TokenPriceData } from './types';
+
 const latestPricesCsv = path.join(process.cwd(), '../sui-data/live-data-latest.csv');
 
+interface Candle {
+    timestamp: Date;
+    close: number;
+    isClosed: boolean;
+}
+
+// eslint-disable-next-line prefer-const
 let mostRecentPrices = {
     USDC: 1,
     SUI: 123,
@@ -11,7 +20,7 @@ let mostRecentPrices = {
 
 export { mostRecentPrices };
 
-export async function getLatestPrice(token: string): Promise<Number> {
+export async function getLatestPrice(token: string): Promise<number> {
     const fileContent = await fs.readFileSync(latestPricesCsv, 'utf8');
     const lines = fileContent.trim().split('\n');
 
@@ -23,7 +32,7 @@ export async function getLatestPrice(token: string): Promise<Number> {
         throw new Error('Empty file');
     }
 
-    const candles: any[] = [];
+    const candles: Candle[] = [];
     let lineCount = 0;
     let errorCount = 0;
     const maxErrors = 10;
@@ -71,7 +80,7 @@ export async function getLatestPrice(token: string): Promise<Number> {
 
             // Find the SUI data in the array
             if (token === "SUI") {
-                coinData = data.find((item: any) => item?.coin === 'SUI');
+                coinData = data.find((item: TokenPriceData) => item?.coin === 'SUI');
                 if (!coinData) {
                     console.log(`No SUI data found in array at line ${lineCount}`);
                     errorCount++;
@@ -85,7 +94,7 @@ export async function getLatestPrice(token: string): Promise<Number> {
 
             // Find the SUI data in the array
             else if (token === "DEEP") {
-                coinData = data.find((item: any) => item?.coin === 'DEEP');
+                coinData = data.find((item: TokenPriceData) => item?.coin === 'DEEP');
                 if (!coinData) {
                     console.log(`No DEEP data found in array at line ${lineCount}`);
                     errorCount++;
@@ -98,7 +107,7 @@ export async function getLatestPrice(token: string): Promise<Number> {
             }
 
             // Create candle from SUI data
-            const candle: any = {
+            const candle: Candle = {
                 timestamp: new Date(timestamp),
                 close: parseFloat(coinData.close),
                 isClosed: true
@@ -120,7 +129,7 @@ export async function getLatestPrice(token: string): Promise<Number> {
         }
     }
 
-    let close = candles.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())[0].close;
+    const close = candles.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())[0].close;
 
     // Add type guard to ensure token is a valid key
     if (token === 'USDC' || token === 'SUI' || token === 'DEEP') {
