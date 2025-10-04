@@ -16,6 +16,7 @@ export default function PerformanceMetrics({ address, portfolioValue }: Performa
   const [tokensInCirculation, setTokensInCirculation] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const wallet = false;
 
   const loadWalletData = useCallback(async () => {
     try {
@@ -107,26 +108,53 @@ export default function PerformanceMetrics({ address, portfolioValue }: Performa
         </div>
 
       </div>
-      <div className="wallet-card small-height">
-        <div className="wallet-header">
-          <h2>Live Share Price</h2>
-        </div>
-        <div className="balance-amount">
-          {tokensInCirculation !== undefined && portfolioValue !== undefined ? (
-            <AnimatedNumber
-              value={portfolioValue / tokensInCirculation}
-              duration={300000}
-              className="text-2xl font-semibold inline-block"
-              decimalPlaces={8}
-              showDirectionColor={true}
-              currency="USD"
-            />
-          ) : (
-            <p className="text-2xl font-semibold text-blue-400">Loading...</p>
-          )}
-        </div>
 
-      </div>
+      {(!wallet) && (
+
+        <div className="wallet-card small-height">
+          <div className="wallet-header">
+            <h2>Shares available</h2>
+          </div>
+          <div className="balance-amount">
+            {tokensInCirculation !== undefined ? (
+              <AnimatedNumber
+                value={1000000 - tokensInCirculation}
+                duration={300000}
+                className="text-2xl font-semibold inline-block"
+                decimalPlaces={8}
+                showDirectionColor={true}
+                currency=""
+              />
+            ) : (
+              <p className="text-2xl font-semibold text-blue-400">Loading...</p>
+            )}
+          </div>
+
+        </div>
+      )}
+      {(wallet) && (
+
+        <div className="wallet-card small-height">
+          <div className="wallet-header">
+            <h2>Live Share Price</h2>
+          </div>
+          <div className="balance-amount">
+            {tokensInCirculation !== undefined && portfolioValue !== undefined ? (
+              <AnimatedNumber
+                value={portfolioValue / tokensInCirculation}
+                duration={300000}
+                className="text-2xl font-semibold inline-block"
+                decimalPlaces={8}
+                showDirectionColor={true}
+                currency="USD"
+              />
+            ) : (
+              <p className="text-2xl font-semibold text-blue-400">Loading...</p>
+            )}
+          </div>
+
+        </div>
+      )}
       <div className="wallet-card small-height">
         <div className="wallet-header">
           <h2>Total Trading Volume</h2>
