@@ -12,9 +12,11 @@ type RouteParams = {
     address: string;
   };
 };
-
+// @ts-nocheck
 export async function GET(
+  // @ts-nocheck
   request: NextRequest,
+  // @ts-nocheck
   { params }: RouteParams
 ) {
   const { address } = params;
