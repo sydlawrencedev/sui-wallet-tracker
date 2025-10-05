@@ -3,18 +3,19 @@
 import { AnimatedNumber } from './AnimatedNumber';
 import { getWalletData } from '../lib/walletData';
 import { useEffect, useState, useCallback } from 'react';
+import { apiFetch } from '../utils/api';
 
 interface PerformanceMetricsProps {
   portfolioValue?: number;
   suiPrice?: number;
   address: string;
+  tokensAvailable?: number;
   walletIn?: number;
 }
 
-export default function PerformanceMetrics({ address, portfolioValue }: PerformanceMetricsProps) {
+export default function PerformanceMetrics({ address, portfolioValue, tokensAvailable, walletIn }: PerformanceMetricsProps) {
 
-  const [tokensInCirculation, setTokensInCirculation] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const wallet = false;
 
@@ -42,39 +43,12 @@ export default function PerformanceMetrics({ address, portfolioValue }: Performa
     }
   }, [address]);
 
-  useEffect(() => {
 
-    loadWalletData();
-
-    setTokensInCirculation(tokensInCirculation);
-  }, [loadWalletData, tokensInCirculation]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch backtest data
-        const [pricesResponse] = await Promise.all([
-          fetch('/api/price-history')
-        ]);
+    // loadWalletData();
 
-        if (pricesResponse.ok) {
-          const { data: prices } = await pricesResponse.json();
-          if (prices && prices.length > 0) {
-            // Get the most recent price data
-            const latestData = prices[0];
-            const tokensOutstanding = 1000000 - (latestData.TOKENS_AVAILABLE || 0);
-            setTokensInCirculation(tokensOutstanding > 0 ? tokensOutstanding : 1);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+  }, [loadWalletData]);
 
   if (loading) {
     return <div className="text-center py-4">Fetching data...</div>;
@@ -95,7 +69,7 @@ export default function PerformanceMetrics({ address, portfolioValue }: Performa
           {portfolioValue !== undefined ? (
             <AnimatedNumber
               value={portfolioValue}
-              duration={300000}
+              duration={30000}
               className="text-2xl font-semibold"
               decimalPlaces={8}
               showDirectionColor={true}
@@ -116,10 +90,10 @@ export default function PerformanceMetrics({ address, portfolioValue }: Performa
             <h2>Shares available</h2>
           </div>
           <div className="balance-amount">
-            {tokensInCirculation !== undefined ? (
+            {tokensAvailable !== undefined ? (
               <AnimatedNumber
-                value={1000000 - tokensInCirculation}
-                duration={300000}
+                value={tokensAvailable}
+                duration={30000}
                 className="text-2xl font-semibold inline-block"
                 decimalPlaces={8}
                 showDirectionColor={true}

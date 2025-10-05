@@ -31,46 +31,33 @@ export interface Tx {
 }
 
 export interface Transaction {
-  id: string;
-  type: 'send' | 'receive' | 'swap' | 'batch';
-  status: 'success' | 'failure' | 'pending' | 'open' | 'closed';
-  timestamp: number;
-  transfers: TokenTransfer[];
-  usdValue: number;
-  profitLoss: number;
+  id?: string;
+  type?: 'send' | 'receive' | 'swap' | 'batch';
+  status?: 'success' | 'failure' | 'pending' | 'open' | 'closed';
+  timestamp?: number;
+  transfers?: TokenTransfer[];
+  usdValue?: number;
+  profitLoss?: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   raw?: any; // For debugging
   protocol?: string;
   isSwap?: boolean;
   // Trade specific properties
   fees?: number;
+  feesUSD?: number;
   pnl?: number;
+  pnlPct?: number;
+  sui?: number;
+  usdc?: number;
   entryPrice?: number;
   exitPrice?: number;
-  entry?: string | number;
-  exit?: string | number;
+  entry?: Date | undefined;
+  exit?: Date | undefined;
   // For trade grouping
   buyTxs?: Tx[];
   sellTxs?: Tx[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   transactions?: any[]; // For raw transaction data
-}
-
-export interface Trade {
-  id: string;
-  fees: number;
-  pnl: number;
-  buyTxs: Transaction[];
-  sellTxs: Transaction[];
-  status: 'closed' | 'open';
-  entry: number;
-  exit: number;
-  entryPrice: number;
-  exitPrice: number;
-  feesUSD: number;
-  sui: number;
-  usdc: number;
-  pnlPct: number;
 }
 
 interface TransactionListProps {
@@ -101,8 +88,8 @@ export function TransactionList({ address }: TransactionListProps) {
     loadPrices();
   }, []);
 
-  const groupTrades = (txs: Tx[]): Trade[] => {
-    const trades: Trade[] = [];
+  const groupTrades = (txs: Tx[]): Transaction[] => {
+    const trades: Transaction[] = [];
     txs.forEach((tx: Tx) => {
 
       if (trades.length === 0 && tx.balanceChanges['USDC'] < 0) {
@@ -112,8 +99,15 @@ export function TransactionList({ address }: TransactionListProps) {
           pnl: 0,
           buyTxs: [tx],
           sellTxs: [tx],
-          status: "open"
-        });
+          status: "open",
+          entry: tx.transactions[0].timestamp,
+          entryPrice: tx.balanceChanges['USDC'] / tx.balanceChanges['SUI'] * 1000 * -1,
+          exit: undefined,
+          feesUSD: 0,
+          sui: tx.balanceChanges['SUI'] * 1,
+          usdc: tx.balanceChanges['USDC'] * 1,
+          pnlPct: 0,
+        } as Transaction);
         console.log("new trade", trades);
       }
       else {
@@ -141,7 +135,12 @@ export function TransactionList({ address }: TransactionListProps) {
           } else {
             trades.push({
               id: tx.transactions[0].id,
-              exit: tx.transactions[0].timestamp,
+              type: "swap",
+              status: "open",
+              timestamp: new Date(tx.transactions[0].timestamp).getTime(),
+              usdValue: tx.balanceChanges['USDC'] * 1,
+              profitLoss: 0,
+              exit: new Date(tx.transactions[0].timestamp),
               entry: 0,
               entryPrice: 0,
               exitPrice: tx.balanceChanges['USDC'] / tx.balanceChanges['SUI'] * 1000 * -1,
@@ -153,8 +152,7 @@ export function TransactionList({ address }: TransactionListProps) {
               usdc: tx.balanceChanges['USDC'] * 1,
               sellTxs: [tx],
               buyTxs: [],
-              status: "open"
-            });
+            } as unknown as Transaction);
 
 
           }
@@ -168,7 +166,7 @@ export function TransactionList({ address }: TransactionListProps) {
   }
 
   // Helper to group transactions by digest
-  const groupTransactions = (txs: Tx[]): Transaction[] => {
+  const groupTransactions = (txs: Tx[]): Tx[] => {
     const grouped = {};
 
     txs.forEach((tx: Tx) => {
@@ -227,7 +225,7 @@ export function TransactionList({ address }: TransactionListProps) {
       console.log(`Number of sorted transactions: ${sortedTransactions.length}`)
 
       const trades = groupTrades(sortedTransactions);
-      const filteredTrades = trades.filter((trade) => trade.entry >= startTime && trade.entry <= endTime);
+      const filteredTrades = trades.filter((trade) => trade.entry.getTime() >= startTime && trade.entry.getTime() <= endTime);
 
       console.log(`Number of trades: ${trades.length}`)
 
@@ -359,7 +357,7 @@ export function TransactionList({ address }: TransactionListProps) {
                     >
                       <td>
                         <a href={`https://suiscan.xyz/mainnet/tx/${txs.buyTxs[0].transactions[0].id}`} target="_blank">
-                          {formatDate(txs.entry)}
+                          {formatDate(txs.entry.getTime())}
                         </a>
                       </td>
                       <td>
@@ -369,7 +367,7 @@ export function TransactionList({ address }: TransactionListProps) {
                       <td>
                         {typeof txs.exit === 'number' ? (
                           <a href={`https://suiscan.xyz/mainnet/tx/${txs.sellTxs[0].transactions[0].id}`} target="_blank">
-                            {formatDate(txs.exit)}
+                            {formatDate((txs.exit as Date).getTime())}
                           </a>
                         ) : ''}
                       </td>

@@ -1,9 +1,27 @@
-import fs from 'fs';
-import path from 'path';
-
 import type { TokenPriceData } from './types';
 
-const latestPricesCsv = path.join(process.cwd(), '../sui-data/live-data-latest.csv');
+const getServerSideModule = (moduleName: string) => {
+    if (typeof window === 'undefined') {
+        if (moduleName === 'fs') {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const fs = require('fs')
+            return fs;
+        }
+        if (moduleName === 'path') {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const path = require('path');
+            return path;
+        }
+        return import(moduleName);
+    }
+    return null;
+};
+
+// Then use it like this:
+const fs = getServerSideModule('fs');
+const path = getServerSideModule('path');
+
+const latestPricesCsv = (path) ? path.join(process.cwd(), '../sui-data/live-data-latest.csv') : '';
 
 interface Candle {
     timestamp: Date;

@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 
-export function DepositForm({ isOpen, onClose, maxAmount, onDeposit, fxRate, tokens }: { isOpen: boolean; onClose: () => void; maxAmount: number; onDeposit: (amount: number) => void }) {
+export function DepositForm({ isOpen, onClose, maxAmount, onDeposit, fxRate, tokens }: { isOpen: boolean; onClose: () => void; maxAmount: number; onDeposit: (amount: number) => void, fxRate: number, tokens: { usdc: string, at1000i: string } }) {
     const [amount, setAmount] = useState('');
     const [error, setError] = useState('');
+    const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
 
     const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
@@ -57,6 +58,8 @@ export function DepositForm({ isOpen, onClose, maxAmount, onDeposit, fxRate, tok
 
     if (!isOpen) return null;
 
+    if (isWithdrawOpen) return null;
+
     return (
 
 
@@ -90,8 +93,8 @@ export function DepositForm({ isOpen, onClose, maxAmount, onDeposit, fxRate, tok
                 </div>
                 {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
             </div>
-
-            {Math.floor(amount) < 100 && (
+            {Math.floor(Number(amount))}
+            {Math.floor(Number(amount)) < 100 && (
                 <div className="bg-gray-700 p-4 rounded-lg mb-6">
 
                     <div className="flex justify-between mb-2">
@@ -102,14 +105,14 @@ export function DepositForm({ isOpen, onClose, maxAmount, onDeposit, fxRate, tok
                 </div>
             )}
 
-            {Math.floor(amount) >= 100 && (
+            {Math.floor(Number(amount)) >= 100 && (
 
                 <div className="bg-gray-700 p-4 rounded-lg mb-6">
 
                     <div className="flex justify-between mb-2">
                         <span className="text-sm text-gray-400">You will receive</span>
                         <span className="text-sm font-medium text-white">
-                            {amount ? (Math.floor(amount / fxRate)) : '0.00'} AT1000i
+                            {amount ? (Math.floor(Number(amount) / fxRate)) : '0.00'} AT1000i
                         </span>
                     </div>
 
@@ -120,11 +123,11 @@ export function DepositForm({ isOpen, onClose, maxAmount, onDeposit, fxRate, tok
                 <button
                     type="submit"
                     onClick={handleSubmit}
-                    className={Math.floor(amount) < 100 ? "btn-primary disabled" : "btn-primary"}
+                    className={Math.floor(Number(amount)) < 100 ? "btn-primary disabled" : "btn-primary"}
                 >
                     Deposit USDC
                 </button>
-                <button className={tokens.at1000i > 0 ? "btn-outline" : "btn-outline disabled"} title={tokens.at1000i > 0 ? '' : 'No shares to withdraw'} onClick={() => tokens.at1000i > 0 && setIsWithdrawOpen(true)} disabled={tokens.at1000i <= 0} > Withdraw</button>
+                <button className={Number(tokens.at1000i) > 0 ? "btn-outline" : "btn-outline disabled"} title={Number(tokens.at1000i) > 0 ? '' : 'No shares to withdraw'} onClick={() => Number(tokens.at1000i) > 0 && setIsWithdrawOpen(true)} disabled={Number(tokens.at1000i) <= 0} > Withdraw</button>
             </div>
         </form>
 

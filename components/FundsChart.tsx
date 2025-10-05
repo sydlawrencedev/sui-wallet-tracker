@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { Line } from 'react-chartjs-2';
+import { apiFetch } from '../utils/api';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -47,15 +48,9 @@ export function FundsChart({ latestTokenValue }: FundsChartProps) {
             try {
                 setIsLoading(true);
 
-                // Fetch price history
-                const priceResponse = await fetch('/api/price-history');
-
-                if (!priceResponse.ok) {
-                    throw new Error(`Error fetching data: ${priceResponse.status}`);
-                }
-
-                const priceData = await priceResponse.json();
-                setPriceData(priceData.data);
+                // Fetch price history using the API utility
+                const { data } = await apiFetch<{ data: PriceData[] }>('/api/price-history');
+                setPriceData(data);
             } catch (error) {
                 console.error('Error fetching data:', error);
             } finally {

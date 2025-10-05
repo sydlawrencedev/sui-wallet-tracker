@@ -6,7 +6,7 @@ import { getWalletData, formatBalance } from '../lib/walletData';
 
 interface WalletInfoProps {
   address: string;
-  onTotalValueChange?: (value: number) => void;
+  onTotalValueChange?: (value: number, tokens: TokenBalance[]) => void;
 }
 
 export function WalletInfo({ address, onTotalValueChange }: WalletInfoProps) {

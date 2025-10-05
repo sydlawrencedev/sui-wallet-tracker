@@ -1,26 +1,28 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { getWalletData } from '../lib/walletData';
+import { apiFetch } from '../utils/api';
+
 import { FundsChart } from './FundsChart';
+// import { ConnectButton } from '@suiet/wallet-kit';
 import { DepositForm } from './DepositForm';
-import { ConnectButton, useConnectWallet } from '@mysten/dapp-kit';
 
 interface Tokens {
     usdc: string;
     at1000i: string;
 }
 
-interface Account {
-    address: string;
-}
+import type { Account } from '../lib/types';
 
-export function WalletBalance(address: Account) {
+export function WalletBalance({ address }: { address: Account | null | false }) {
     const [tokens, setTokens] = useState<Tokens | null>({
         usdc: "0",
         at1000i: "0"
     });
 
     const [loading, setLoading] = useState(false);
+    const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const [sharePrice, setSharePrice] = useState<number>(0);
@@ -29,14 +31,11 @@ export function WalletBalance(address: Account) {
 
     const [isDepositOpen, setIsDepositOpen] = useState(false);
 
-    const currentAccount = useConnectWallet();
-    console.log(currentAccount);
 
     const handleDeposit = async (amount: number) => {
         try {
             // Call your deposit API here
             console.log('Depositing:', amount);
-
 
             // Close the deposit form
             setIsDepositOpen(false);
@@ -50,74 +49,78 @@ export function WalletBalance(address: Account) {
     };
 
     useEffect(() => {
+        // if (!address || !address.address) return;
 
-        const fetchPriceHistory = async () => {
+        let isMounted = true;
+        const controller = new AbortController();
+        const signal = controller.signal;
+
+        const fetchData = async () => {
+            if (!isMounted) return;
+
             try {
-                // Fetch backtest data
-                const [pricesResponse] = await Promise.all([
-                    fetch('/api/price-history')
-                ]);
-
-                if (pricesResponse.ok) {
-                    const { data: prices } = await pricesResponse.json();
-                    if (prices && prices.length > 0) {
-                        // Get the most recent price data
-                        const previousData = prices[Math.min(7, prices.length - 1)]
-
-                        const latestData = prices[0];
-                        console.log("got latest data,", latestData)
-                        setSharePrice(latestData.FUNDS / (1000000 - (latestData.TOKENS_AVAILABLE || 0)));
-                        setPreviousSharePrice(previousData.FUNDS / (1000000 - (previousData.TOKENS_AVAILABLE || 0)));
-                    }
-                }
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            }
-        }
-        fetchPriceHistory();
-        if (!address.address) {
-
-            return;
-        }
-
-
-        const fetchWalletData = async () => {
-            try {
+                setLoading(true);
                 setError(null);
 
-                const response = await fetch(`/api/wallet/${address.address}`);
-                if (!response.ok) {
-                    throw new Error('Failed to fetch wallet data');
+                if (!isMounted) return;
+
+                // Process price data
+                const [pricesResponse] = await Promise.all([
+                    fetch('/api/price-history', { signal })
+                ]);
+                const prices = await pricesResponse.json();
+                if (prices?.data?.length > 0) {
+                    const previousData = prices.data[Math.min(7, prices.data.length - 1)];
+                    const latestData = prices.data[0];
+                    const latestSharePrice = latestData.FUNDS / (1000000 - (latestData.TOKENS_AVAILABLE || 0));
+                    const previousSharePriceValue = previousData.FUNDS / (1000000 - (previousData.TOKENS_AVAILABLE || 0));
+
+                    setSharePrice(latestSharePrice);
+                    setPreviousSharePrice(previousSharePriceValue);
                 }
-                const data = await response.json();
 
-
-                data?.tokens?.forEach((token) => {
-                    if (token.symbol === "USDC") {
-                        tokens.usdc = token.balance;
-                    }
-                    if (token.symbol === "AT1000i") {
-                        tokens.at1000i = token.balance;
-                    }
-                });
-
-                setTokens(tokens);
+                if (address && address.address) {
+                    // Fetch wallet data and prices in parallel
+                    const [walletData] = await Promise.all([
+                        getWalletData(address.address)
+                    ]);
+                    // Process wallet data
+                    const newTokens = { usdc: "0", at1000i: "0" };
+                    walletData.tokens?.forEach((token) => {
+                        if (token.symbol === "USDC") newTokens.usdc = token.balance;
+                        if (token.symbol === "AT1000i") newTokens.at1000i = token.balance;
+                    });
+                    setTokens(newTokens);
+                }
             } catch (err) {
-                console.error('Error fetching wallet data:', err);
-                setError('Failed to load wallet data');
+                if (err.name !== 'AbortError') {
+                    console.error('Error fetching data:', err);
+                    setError('Failed to load wallet data');
+                }
             } finally {
-                setLoading(false);
+                if (isMounted) {
+                    setLoading(false);
+                }
             }
         };
 
-        fetchWalletData();
-        const interval = setInterval(fetchWalletData, 30000);
-        return () => clearInterval(interval);
-    }, [address, tokens]);
+        // Initial fetch
+        fetchData();
 
-    if (!address) {
-        return null;
-    }
+        // Set up polling with cleanup
+        const interval = setInterval(fetchData, 5 * 60 * 1000); // Poll every 5 minutes
+
+        // Cleanup function
+        return () => {
+            isMounted = false;
+            controller.abort();
+            clearInterval(interval);
+        };
+    }, [(address) ? address?.address : '']); // Only depend on address.address
+
+    // if (!address) {
+    //     return null;
+    // }
 
     if (loading) {
         return (
@@ -142,35 +145,35 @@ export function WalletBalance(address: Account) {
         <div className="single-column">
             <div className="wallet-card two-thirds">
                 <div className="wallet-header">
-                    {(address.address) && (
+                    {(address && address.address) && (
                         <h2>α Fund - Your balance</h2>
                     )}
-                    {(!address.address) && (
+                    {(!address || !address.address) && (
                         <h2>α Fund - Overall performance</h2>
                     )}
                 </div>
 
                 <div className="token-amount">
 
-                    {(address.address) && (
+                    {(address && address.address) && (
                         <div>
-                            {(tokens.at1000i / 1000000000).toLocaleString("en-US")}
+                            {(Number(tokens.at1000i) / 1000000000).toLocaleString("en-US")}
                             &nbsp;shares
                         </div>
                     )}
-                    {(!address.address) && (
+                    {(!address || !address.address) && (
                         <div>
                             Share price
                         </div>
                     )}
                 </div>
                 <div className="balance-amount">
-                    {(address.address) && (
+                    {(address && address.address) && (
                         <div>
-                            ${Math.floor((sharePrice * (tokens.at1000i / 1000000000))).toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                            ${Math.floor((Math.floor(sharePrice * 100) / 100 * (Number(tokens.at1000i) / 1000000000))).toLocaleString("en-US", { maximumFractionDigits: 0 })}
                         </div>
                     )}
-                    {(!address.address) && (
+                    {(!address || !address.address) && (
                         <div>
                             ${((Math.ceil((sharePrice * 100)) / 100)).toLocaleString("en-US", { maximumFractionDigits: 2 })}
                         </div>
@@ -190,25 +193,25 @@ export function WalletBalance(address: Account) {
             </div>
             <div className="wallet-card small-height">
 
-                {!address.address && (
+                {(!address || !address.address) && (
                     <div>
                         <p>Let&apos;s make more money!</p>
                         <p>Capital is at risk. Min deposit $100</p>
                         <div className="wallet-actions">
-                            <ConnectButton className="btn-primary" />
+                            <p>Connect wallet button</p>
                         </div>
                     </div>
                 )}
 
 
 
-                {address.address && !isDepositOpen && tokens.usdc / 1000000 < 1 && (
+                {(address && address.address) && !isDepositOpen && Number(tokens.usdc) / 1000000 < 1 && (
                     <p>You have no free funds, add USDC to your wallet.</p>
                 )}
-                {address.address && !isDepositOpen && tokens.usdc / 1000000 >= 1 && (
-                    <p>You have ${(tokens.usdc / 1000000).toFixed(0)} not making you money.</p>
+                {(address && address.address) && !isDepositOpen && Number(tokens.usdc) / 1000000 >= 1 && (
+                    <p>You have ${(Number(tokens.usdc) / 1000000).toFixed(0)} not making you money.</p>
                 )}
-                {address.address && (
+                {(address && address.address) && (
                     <DepositForm
                         isOpen={isDepositOpen}
                         onClose={() => setIsDepositOpen(false)}
@@ -221,22 +224,22 @@ export function WalletBalance(address: Account) {
                 )}
 
 
-                {address.address && !isDepositOpen && (
+                {(address && address.address) && !isDepositOpen && !isWithdrawOpen && (
                     <div className="wallet-actions">
                         <button
-                            className={tokens.usdc / 1000000 < 100 ? 'btn-primary disabled' : 'btn-primary'}
-                            title={tokens.usdc / 1000000 < 100 ? 'No funds to deposit' : ''}
-                            onClick={() => tokens.usdc / 1000000 >= 100 && setIsDepositOpen(true)}
-                            disabled={tokens.usdc / 1000000 < 100}
+                            className={Number(tokens.usdc) / 1000000 < 100 ? 'btn-primary disabled' : 'btn-primary'}
+                            title={Number(tokens.usdc) / 1000000 < 100 ? 'No funds to deposit' : ''}
+                            onClick={() => Number(tokens.usdc) / 1000000 >= 100 && setIsDepositOpen(true)}
+                            disabled={Number(tokens.usdc) / 1000000 < 100}
                         >
                             Deposit Funds
                         </button>
-                        <button className={tokens.at1000i > 0 ? "btn-outline" : "btn-outline disabled"} title={tokens.at1000i > 0 ? '' : 'No shares to withdraw'} onClick={() => tokens.at1000i > 0 && setIsWithdrawOpen(true)} disabled={tokens.at1000i <= 0} > Withdraw</button>
+                        <button className={Number(tokens.at1000i) > 0 ? "btn-outline" : "btn-outline disabled"} title={Number(tokens.at1000i) > 0 ? '' : 'No shares to withdraw'} onClick={() => Number(tokens.at1000i) > 0 && setIsWithdrawOpen(true)} disabled={Number(tokens.at1000i) <= 0} > Withdraw</button>
 
                     </div>
                 )}
 
-                {address.address && (
+                {(address && address.address) && (
                     <p>Capital is at risk. Min deposit $100</p>
                 )}
 

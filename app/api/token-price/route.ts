@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCachedPrice, updateCache, getDefaultPriceData, type PriceData } from '@/lib/priceCache';
 
-import type TokenPriceData from '../../lib/types.js'
+import type { TokenPriceData } from '@/lib/types.js'
 
 // Default prices to use when no cache is available
 const DEFAULT_PRICES: Record<string, number> = {

@@ -15,6 +15,7 @@ import {
   type InteractionMode,
 } from 'chart.js';
 import { useEffect, useState } from 'react';
+import { apiFetch } from '../utils/api';
 
 // Register ChartJS components
 ChartJS.register(
@@ -169,11 +170,7 @@ const PriceCharts = () => {
     const fetchPriceData = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/price-history');
-        if (!response.ok) {
-          throw new Error('Failed to fetch price data');
-        }
-        const { data } = await response.json();
+        const { data } = await apiFetch<{ data: Array<{ date: string; SUI: number; GBP: number; FUNDS: number; TOKENS_AVAILABLE: number; DEEP: number }> }>('/api/price-history');
 
         if (!Array.isArray(data) || data.length === 0) {
           throw new Error('No price data available');

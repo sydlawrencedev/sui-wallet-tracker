@@ -1,3 +1,5 @@
+import { apiFetch } from './api';
+
 interface PriceData {
   date: string;
   USDC: number;
@@ -18,13 +20,10 @@ let allPricesCache: Array<{ date: string, DEEP?: number }> | null = null;
  */
 export async function getDeepPriceForAllDates(): Promise<void> {
   try {
-    const response = await fetch('/api/price-history');
-    if (!response.ok) {
-      throw new Error('Failed to fetch price history');
-    }
-    console.log("fetching price history");
-    const data = await response.json();
-    console.log("data", data.data)
+    console.log("Fetching price history...");
+    const data = await apiFetch<{ data: PriceData[] }>('/api/price-history');
+    console.log("Price history data received");
+
     allPricesCache = data.data;
     // Populate the price cache with all the data
     data.data.forEach((priceData: PriceData) => {
@@ -32,7 +31,6 @@ export async function getDeepPriceForAllDates(): Promise<void> {
         priceCache.set(priceData.date, priceData.DEEP);
       }
     });
-    console.log(allPricesCache);
   } catch (error) {
     console.error('Error fetching all price history:', error);
     throw error;
@@ -68,11 +66,11 @@ export function getDeepPriceForDate(date: Date | string): number | null {
   }
 
   // If we get here, the price isn't in the cache
-  console.warn(`Price not found in cache for date: ${dateStr}`);
+  console.warn(`Price not found for deep in cache for date: ${dateStr}, trying the next day`);
+  const nextDay = new Date(date);
+  nextDay.setDate(nextDay.getDate() + 1);
   return null;
 }
-
-console.log(getDeepPriceForDate(new Date("2025-09-24")));
 
 /**
  * Format a token amount with USD value

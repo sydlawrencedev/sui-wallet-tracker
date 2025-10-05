@@ -7,3 +7,7 @@ export interface TokenPriceData {
     close: number;
     volume: number;
 }
+
+export interface Account {
+    address: string;
+}

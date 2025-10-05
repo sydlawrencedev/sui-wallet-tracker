@@ -67,47 +67,54 @@ function AutoRefreshImage({ src, alt, className, style }: AutoRefreshImageProps)
 
 const queryClient = new QueryClient();
 export default function Wallet() {
-    const account = useCurrentAccount();
-    const wallet = useCurrentWallet();
-    const autoConnectionStatus = useAutoConnectWallet();
-
-    console.log(autoConnectionStatus);
-    console.log(account);
-    console.log(wallet);
-
+    const account = false;
     const [portfolioValue, setPortfolioValue] = useState<number>(0);
+    const [tokensAvailable, setTokensAvailable] = useState<number>(0);
     const [walletStatus, setWalletStatus] = useState<number>(0);
-
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
 
     const loadWalletData = useCallback(async () => {
-        const { tokens, totalValue, error } = await getWalletData(DEFAULT_SUI_ADDRESS);
+        try {
+            setIsLoading(true);
+            const { tokens, totalValue, error } = await getWalletData(DEFAULT_SUI_ADDRESS);
 
-        if (error) {
-            return;
-        }
-
-        let inTrade = false;
-        tokens.forEach(token => {
-            if (token.name === "SUI") {
-                if (token.balance * 1 * 10 ** token.decimals > 5) {
-                    inTrade = true;
-                }
+            if (error) {
+                setError(error);
+                return;
             }
 
-        });
+            const inTrade = tokens.some(token =>
+                token.name === "SUI" &&
+                (parseFloat(token.balance) / (10 ** token.decimals)) > 5
+            );
+            const tokensAvailable = tokens.some(token =>
+                token.name === "AT1000i" &&
+                (parseFloat(token.balance) / (10 ** token.decimals)) > 5
+            );
 
-        setWalletStatus(inTrade ? 1 : 0);
-        setPortfolioValue(totalValue);
-
+            setWalletStatus(inTrade ? 1 : 0);
+            setPortfolioValue(totalValue);
+            setTokensAvailable(tokensAvailable);
+            setError(null);
+        } catch (err) {
+            console.error('Error loading wallet data:', err);
+            setError('Failed to load wallet data. Please try again later.');
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
 
-
+    // Initial load and set up polling
     useEffect(() => {
-        loadWalletData();
+        const loadData = async () => {
+            await loadWalletData();
+        };
 
-        const interval = setInterval(loadWalletData, 30000);
+        loadData();
+        const interval = setInterval(loadData, 5 * 60 * 1000); // Poll every 5 minutes
+
         return () => clearInterval(interval);
-
     }, [loadWalletData]);
 
     return (
@@ -119,9 +126,20 @@ export default function Wallet() {
                         <h2>
                             👋 Welcome investor!
                             -&nbsp;
-                            {walletStatus ? "I'm actively trading" : "I'm waiting for a buy signal"}
+                            {isLoading ? 'Loading...' : walletStatus ? "I'm actively trading" : "I'm waiting for a buy signal"}
                         </h2>
-                        <WalletBalance address={account} />
+
+                        {error && (
+                            <div className="error-message" style={{ color: 'red', margin: '10px 0' }}>
+                                {error}
+                            </div>
+                        )}
+
+                        {isLoading ? (
+                            <div>Loading wallet data...</div>
+                        ) : (
+                            <WalletBalance address={account} />
+                        )}
                         <div className="wallet-card main-graph">
                             {/* Main Chart */}
                             <div className="wallet-header">
@@ -139,7 +157,7 @@ export default function Wallet() {
 
                         </div>
 
-                        <PerformanceMetrics address={DEFAULT_SUI_ADDRESS} portfolioValue={portfolioValue} walletIn={walletStatus} />
+                        <PerformanceMetrics address={DEFAULT_SUI_ADDRESS} portfolioValue={portfolioValue} tokensAvailable={tokensAvailable} walletIn={walletStatus} />
 
                     </div>
                 </WalletProvider>

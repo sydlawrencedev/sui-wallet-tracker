@@ -237,7 +237,7 @@ export interface TokenBalance {
 // Cache for token prices to avoid redundant API calls
 export const tokenPriceCache: Record<string, { priceUSD: number; timestamp: number }> = {};
 let allPricesCache: { prices: Record<string, number>; timestamp: number } | null = null;
-const PRICE_CACHE_DURATION_MS = 10 * 1000; // 10 seconds
+const PRICE_CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
 // Default prices to use when API is rate limited or no cache is available
 const DEFAULT_PRICES: Record<string, number> = {
@@ -310,11 +310,14 @@ async function fetchAllPrices(): Promise<Record<string, number>> {
       return prices;
     } else {
 
+      const DEEP = await getLatestPrice("DEEP");
+      const SUI = await getLatestPrice("SUI");
+
       return {
-        date: new Date(),
+        date: Date.now(),
         USDC: 1,
-        DEEP: getLatestPrice("DEEP"),
-        SUI: getLatestPrice("SUI"),
+        DEEP: DEEP,
+        SUI: SUI,
 
       }
 
@@ -327,6 +330,9 @@ async function fetchAllPrices(): Promise<Record<string, number>> {
 }
 
 async function getTokenPrice(token: string): Promise<number> {
+  if (token === "AT1000i") {
+    return 0;
+  }
   const normalizedToken = normalizeTokenSymbol(token);
   const now = Date.now();
 
@@ -396,9 +402,23 @@ async function getTokenPrice(token: string): Promise<number> {
   }
 }
 
+// Cache for wallet balances with timestamps
+const walletBalanceCache: Record<string, { data: TokenBalance[]; timestamp: number }> = {};
+const WALLET_BALANCE_CACHE_TTL = 30 * 1000; // 30 seconds
+
 export async function fetchWalletBalances(address: string): Promise<TokenBalance[]> {
   try {
+    // Check cache first
+    const now = Date.now();
+    const cacheKey = `wallet-${address}`;
+    
+    if (walletBalanceCache[cacheKey] && (now - walletBalanceCache[cacheKey].timestamp < WALLET_BALANCE_CACHE_TTL)) {
+      console.log(`Returning cached wallet balances for ${address}`);
+      return walletBalanceCache[cacheKey].data;
+    }
 
+    console.log("Fetching fresh wallet balances for address:", address);
+    
     // First, get all coins owned by the address
     const response = await fetch('https://fullnode.mainnet.sui.io:443', {
       method: 'POST',
@@ -515,10 +535,23 @@ export async function fetchWalletBalances(address: string): Promise<TokenBalance
     );
 
     // Filter out null values and sort by value in descending order
-    return balances.filter((b): b is TokenBalance => b !== null)
+    const result = balances.filter((b): b is TokenBalance => b !== null)
       .sort((a, b) => b.valueUSD - a.valueUSD);
+    
+    // Update cache
+    walletBalanceCache[cacheKey] = {
+      data: result,
+      timestamp: now
+    };
+    
+    return result;
   } catch (error) {
     console.error('Error in fetchWalletBalances:', error);
+    // Return cached data if available, even if it's stale
+    if (walletBalanceCache[cacheKey]?.data) {
+      console.log('Using stale wallet balance data due to error');
+      return walletBalanceCache[cacheKey].data;
+    }
     return [];
   }
 }
