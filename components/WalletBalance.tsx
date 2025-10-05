@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { getWalletData } from '../lib/walletData';
-import { apiFetch } from '../utils/api';
 
 import { FundsChart } from './FundsChart';
 // import { ConnectButton } from '@suiet/wallet-kit';

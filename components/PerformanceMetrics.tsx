@@ -3,7 +3,6 @@
 import { AnimatedNumber } from './AnimatedNumber';
 import { getWalletData } from '../lib/walletData';
 import { useEffect, useState, useCallback } from 'react';
-import { apiFetch } from '../utils/api';
 
 interface PerformanceMetricsProps {
   portfolioValue?: number;
@@ -15,7 +14,8 @@ interface PerformanceMetricsProps {
 
 export default function PerformanceMetrics({ address, portfolioValue, tokensAvailable, walletIn }: PerformanceMetricsProps) {
 
-  const [loading, setLoading] = useState(false);
+  console.log(walletIn);
+
   const [error, setError] = useState<string | null>(null);
   const wallet = false;
 
@@ -49,10 +49,6 @@ export default function PerformanceMetrics({ address, portfolioValue, tokensAvai
     // loadWalletData();
 
   }, [loadWalletData]);
-
-  if (loading) {
-    return <div className="text-center py-4">Fetching data...</div>;
-  }
 
   if (error) {
     return <div className="text-center py-4 text-red-500">Error: {error}</div>;
@@ -113,7 +109,7 @@ export default function PerformanceMetrics({ address, portfolioValue, tokensAvai
             <h2>Live Share Price</h2>
           </div>
           <div className="balance-amount">
-            {tokensInCirculation !== undefined && portfolioValue !== undefined ? (
+            {/* {tokensInCirculation !== undefined && portfolioValue !== undefined ? (
               <AnimatedNumber
                 value={portfolioValue / tokensInCirculation}
                 duration={300000}
@@ -124,7 +120,7 @@ export default function PerformanceMetrics({ address, portfolioValue, tokensAvai
               />
             ) : (
               <p className="text-2xl font-semibold text-blue-400">Loading...</p>
-            )}
+            )} */}
           </div>
 
         </div>

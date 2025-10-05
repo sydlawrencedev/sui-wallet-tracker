@@ -407,18 +407,18 @@ const walletBalanceCache: Record<string, { data: TokenBalance[]; timestamp: numb
 const WALLET_BALANCE_CACHE_TTL = 30 * 1000; // 30 seconds
 
 export async function fetchWalletBalances(address: string): Promise<TokenBalance[]> {
+  const cacheKey = `wallet-${address}`;
   try {
     // Check cache first
     const now = Date.now();
-    const cacheKey = `wallet-${address}`;
-    
+
     if (walletBalanceCache[cacheKey] && (now - walletBalanceCache[cacheKey].timestamp < WALLET_BALANCE_CACHE_TTL)) {
       console.log(`Returning cached wallet balances for ${address}`);
       return walletBalanceCache[cacheKey].data;
     }
 
     console.log("Fetching fresh wallet balances for address:", address);
-    
+
     // First, get all coins owned by the address
     const response = await fetch('https://fullnode.mainnet.sui.io:443', {
       method: 'POST',
@@ -537,13 +537,13 @@ export async function fetchWalletBalances(address: string): Promise<TokenBalance
     // Filter out null values and sort by value in descending order
     const result = balances.filter((b): b is TokenBalance => b !== null)
       .sort((a, b) => b.valueUSD - a.valueUSD);
-    
+
     // Update cache
     walletBalanceCache[cacheKey] = {
       data: result,
       timestamp: now
     };
-    
+
     return result;
   } catch (error) {
     console.error('Error in fetchWalletBalances:', error);
