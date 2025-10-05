@@ -1,3 +1,6 @@
+
+import { getLatestPrice } from '../lib/prices';
+
 interface SuiTransaction {
   digest: string;
   timestampMs: string;
@@ -269,39 +272,53 @@ async function fetchAllPrices(): Promise<Record<string, number>> {
   }
 
   try {
-    // Determine the base URL based on environment
-    const baseUrl = typeof window === 'undefined'
-      ? process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-      : '';
+    if (typeof window !== 'undefined') {
+      console.log("Fetching prices from API");
 
-    // Fetch all prices at once
-    const response = await fetch(`${baseUrl}/api/token-price`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+      // Determine the base URL based on environment
+      const baseUrl = typeof window === 'undefined'
+        ? process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+        : '';
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch prices: ${response.statusText}`);
-    }
+      // Fetch all prices at once
+      const response = await fetch(`${baseUrl}/api/token-price`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-    const prices = await response.json();
+      if (!response.ok) {
+        throw new Error(`Failed to fetch prices: ${response.statusText}`);
+      }
 
-    // Update the all prices cache
-    allPricesCache = {
-      prices,
-      timestamp: now
-    };
+      const prices = await response.json();
 
-    // Also update individual token caches
-    Object.entries(prices).forEach(([token, price]) => {
-      tokenPriceCache[token] = {
-        priceUSD: price as number,
+      // Update the all prices cache
+      allPricesCache = {
+        prices,
         timestamp: now
       };
-    });
 
-    return prices;
+      // Also update individual token caches
+      Object.entries(prices).forEach(([token, price]) => {
+        tokenPriceCache[token] = {
+          priceUSD: price as number,
+          timestamp: now
+        };
+      });
+
+      return prices;
+    } else {
+
+      return {
+        date: new Date(),
+        USDC: 1,
+        DEEP: getLatestPrice("DEEP"),
+        SUI: getLatestPrice("SUI"),
+
+      }
+
+    }
   } catch (error) {
     console.error('Error fetching all prices:', error);
     // Return empty object if we can't fetch prices
@@ -320,7 +337,9 @@ async function getTokenPrice(token: string): Promise<number> {
 
   // If we have a valid cached price, return it
   if (cachedToken) {
+
     const cachedPrice = getCachedPrice(cachedToken);
+
     if (cachedPrice !== null) {
       return cachedPrice;
     }
@@ -335,6 +354,8 @@ async function getTokenPrice(token: string): Promise<number> {
 
   try {
     // Fetch all prices
+
+
     const allPrices = await fetchAllPrices();
 
     // Find the price for the requested token (case-insensitive)

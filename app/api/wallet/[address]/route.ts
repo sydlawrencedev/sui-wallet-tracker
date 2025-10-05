@@ -1,25 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { getServerSideWalletData } from '@/lib/walletData';
 import { getCachedPrice, updateCache, getDefaultPriceData, type PriceData } from '@/lib/priceCache';
 
-
 export const dynamic = 'force-dynamic'; // Ensure fresh data on each request
 
-import { NextRequest } from 'next/server';
 
-type RouteParams = {
-  params: {
-    address: string;
-  };
-};
-// @ts-nocheck
 export async function GET(
-  // @ts-nocheck
   request: NextRequest,
-  // @ts-nocheck
-  { params }: RouteParams
 ) {
-  const { address } = params;
+  const pathname = request.nextUrl.pathname;
+  const address = pathname.split('/').pop();
 
   if (!address) {
     return NextResponse.json(
@@ -40,11 +30,25 @@ export async function GET(
     const cachedData = getCachedPrice(today) || getDefaultPriceData({ date: today });
 
     data.tokens.forEach((token) => {
-      if (token.symbol === "AT1000i" && address === "0xbcae8fa928ed6606f78c8d0aead213d6e76d29041337dff3b9448e953e79fb39") {
+      if (token.symbol === "AT1000i" && address === process.env.NEXT_PUBLIC_DEFAULT_SUI_ADDRESS) {
         // Only update if the price has changed significantly (more than 0.1%)
         const updatedData: PriceData = {
           ...cachedData,
           "TOKENS_AVAILABLE": token.balance / 1000000000,
+          date: today,
+          timestamp: new Date().getTime()
+        };
+
+        // Don't await this to avoid blocking the response
+        updateCache(updatedData).catch(error => {
+          console.error('Background cache update failed:', error);
+        });
+      }
+      if (token.symbol === "DEEP" && address === process.env.NEXT_PUBLIC_DEFAULT_SUI_ADDRESS) {
+        // Only update if the price has changed significantly (more than 0.1%)
+        const updatedData: PriceData = {
+          ...cachedData,
+          "DEEP": token.priceUSD,
           date: today,
           timestamp: new Date().getTime()
         };
